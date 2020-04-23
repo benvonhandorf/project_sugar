@@ -22,13 +22,13 @@ To achieve these goals there are going to be a number of sub-projects, all withi
 ### Sugar Cam ###
 This will be a set of 1-n cameras monitoring the various hummingbird feeders.  
 
-Initially a Raspberry Pi Zero, 1st gen Raspberry Pi camera module and an appropriate [Motion Project][https://motion-project.github.io/index.html] configuration will provide an MJPEG stream as input but this may expand to include other input methods in the future.
+Initially a Raspberry Pi Zero, 1st gen Raspberry Pi camera module and an appropriate [Motion Project](https://motion-project.github.io/index.html) configuration will provide an MJPEG stream as input but this may expand to include other input methods in the future.
 
 ### Sugar Window ###
 Unfortunately I can't run to the feeders every time there is a hummingbird, so the view of the feeders will be provided by some display, preferably wall-mounted.  
 
-Due to availability, version one will be based on an [Android Things Development Kit]!(https://developer.android.com/things/hardware/imx7d) that I have on hand.
+Due to availability, version one will be based on an [Android Things Development Kit](https://developer.android.com/things/hardware/imx7d) that I have on hand.
 
 ### Monitoring and Recognition ###
-This section is still under research.  The intention is to use machine learning vision algorithims (possibly [YOLO v3]!(https://pjreddie.com/darknet/yolo/)) to monitor the stream from one or more Sugar Cam and detect the presence of Hummmingbirds.  This data would then flow into the notification system.
+This section is still under research.  The intention is to use machine learning vision algorithims (possibly [YOLO v3](https://pjreddie.com/darknet/yolo/)) to monitor the stream from one or more Sugar Cam and detect the presence of Hummmingbirds.  This data would then flow into the notification system.
 
