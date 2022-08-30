@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="Gradle: com.github.perthcpe23:mjpegviewer:1.0.8@aar">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/ad9604f8af38f68cc052732cabb8cf44/jetified-mjpegviewer-1.0.8/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/ad9604f8af38f68cc052732cabb8cf44/jetified-mjpegviewer-1.0.8/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/ad9604f8af38f68cc052732cabb8cf44/jetified-mjpegviewer-1.0.8/res" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.perthcpe23/mjpegviewer/1.0.8/c91a8487a959d9300f948a3bcc9a8473bd0d16ba/mjpegviewer-1.0.8-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.perthcpe23/mjpegviewer/1.0.8/8de13d88a7d243d3ac0266245b510adbe866ed/mjpegviewer-1.0.8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

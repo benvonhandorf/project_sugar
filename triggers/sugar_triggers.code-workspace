@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "feeder_weight/esp8266_load_cell"
+		},
+		{
+			"name": "load_cell_calibration",
+			"path": "feeder_weight/load_cell_calibration"
+		}
+	],
+	"settings": {}
+}
