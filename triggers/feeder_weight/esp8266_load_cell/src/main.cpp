@@ -83,74 +83,101 @@ void setup() {
     initMQTT();
 }
 
-const uint32_t AVERAGING_WINDOW = 10;
-float WINDOW[AVERAGING_WINDOW];
-uint16_t AVG_READING = 0;
-float AVERAGE = 0.0f;
+const uint32_t AVERAGING_WINDOW_LENGTH = 10;
+float WINDOW[AVERAGING_WINDOW_LENGTH];
+uint16_t averagingReadingLocation = 0;
+float calculatedAverage = 0.0f;
 char fmt[12];
-uint8_t ignoredReadings = 0;
+uint8_t triggeredReadings = 0;
 const float EXPECTED_TRIGGER_MIN = 1.5;
-const float EXPECTED_TRIGGERS_MAX = 5;
+const float EXPECTED_TRIGGER_MAX = 10.0;
+const float TRIGGER_RESET_INTERVAL = 100;
 bool initialized = false;
+bool triggered = false;
 
-void loop() {
-    if (LoadCell.update()) {
-        float val = LoadCell.getData();
+float readData() {
+    float readWindow[AVERAGING_WINDOW_LENGTH];
+    uint16_t readLocation = 0;
 
-        float delta = AVERAGE - val;
-
-        // In planned installation, increase in weight should be a more negative
-        // number. delta should
-
-        if (abs(delta) > 100) {
-            // > 100g delta.  Something is suspect.
-            ignoredReadings++;
-        }
-
-        // if (!initialized) {
-            WINDOW[AVG_READING++] = val;
-            ignoredReadings = 0;
-        // } else if (abs(delta) <= 100 || ignoredReadings > 10) {
-        //     if ((abs(delta) < EXPECTED_TRIGGERS_MAX &&
-        //          abs(delta) > EXPECTED_TRIGGER_MIN)) {
-        //         dtostrf(AVERAGE, 5, 3, fmt);
-
-        //         Serial.print("Trigger reading: ");
-        //         Serial.println(fmt);
-
-        //         client.publish("/sensors/feeder/trigger", fmt);
-        //     } else {
-        //         WINDOW[AVG_READING++] = val;
-        //         ignoredReadings = 0;
-        //     }
-        // } else {
-        //     dtostrf(AVERAGE, 5, 3, fmt);
-
-        //     Serial.print("Ignoring reading: ");
-        //     Serial.println(fmt);
-        // }
-
-        if (AVG_READING >= AVERAGING_WINDOW) {
-            // Recalculate the average and print it
-            float avg_value = 0.0f;
-            for (uint16_t i = 0; i < AVERAGING_WINDOW; i++) {
-                avg_value += WINDOW[i];
-            }
-
-            avg_value /= AVERAGING_WINDOW;
-            AVERAGE = avg_value;
-            initialized = true;
-
-            dtostrf(AVERAGE, 5, 3, fmt);
-
-            Serial.print("Calculated average: ");
-            Serial.println(fmt);
-
-            AVG_READING = 0;
-
-            client.publish("/sensors/feeder/average", fmt);
+    while(readLocation < AVERAGING_WINDOW_LENGTH) {
+        if(LoadCell.update()) {
+            readWindow[readLocation++] = LoadCell.getData();
         }
     }
 
-    delay(50);
+    float avg_value = 0.0f;
+
+    for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
+        avg_value += readWindow[i];
+    }
+
+    avg_value /= (float) AVERAGING_WINDOW_LENGTH;
+
+    return avg_value;
+}
+
+void loop() {
+    float val = readData();
+
+    float delta = calculatedAverage - val;
+
+    dtostrf(val, 5, 3, fmt);
+    client.publish("/sensors/feeder/raw", fmt);
+
+    // In planned installation, increase in weight should be a more negative
+    // number. delta should
+
+    if (abs(delta) > EXPECTED_TRIGGER_MIN 
+            && abs(delta) < EXPECTED_TRIGGER_MAX
+            && triggeredReadings < TRIGGER_RESET_INTERVAL
+            && initialized) {
+        //Triggered
+        if(!triggered) {
+            client.publish("/sensors/feeder/trigger", "true");
+            triggered = true;
+
+            Serial.print("Triggered: ");
+            Serial.println(fmt);
+        }
+
+        triggeredReadings++;
+    } else {
+        if(triggered) {
+            client.publish("/sensors/feeder/trigger", "false");
+            triggered = false;
+            triggeredReadings = 0;
+
+            Serial.print("Trigger Cleared: ");
+            Serial.println(fmt);
+        }
+        
+        WINDOW[averagingReadingLocation++] = val;
+
+        if (averagingReadingLocation >= AVERAGING_WINDOW_LENGTH) {
+            initialized = true;
+            averagingReadingLocation = 0;
+        }
+
+        if(initialized) {
+            float avg_value = 0.0f;
+            for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
+                avg_value += WINDOW[i];
+            }
+
+            avg_value /= AVERAGING_WINDOW_LENGTH;
+            calculatedAverage = avg_value;
+
+            if(averagingReadingLocation == 0) {
+                dtostrf(calculatedAverage, 5, 3, fmt);
+
+                Serial.print("Calculated average: ");
+                Serial.println(fmt);
+
+                client.publish("/sensors/feeder/average", fmt);
+            }
+        }
+
+    }
+
+    delay(100);
 }

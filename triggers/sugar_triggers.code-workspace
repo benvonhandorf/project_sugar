@@ -6,6 +6,10 @@
 		{
 			"name": "load_cell_calibration",
 			"path": "feeder_weight/load_cell_calibration"
+		},
+		{
+			"name": "220831-110147-esp32cam",
+			"path": "../../../Documents/PlatformIO/Projects/220831-110147-esp32cam"
 		}
 	],
 	"settings": {}
