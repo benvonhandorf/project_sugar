@@ -2,6 +2,8 @@
 #include <HX711_ADC.h>
 #include <PubSubClient.h>
 
+#define WATCHDOG_MS 30000
+
 // pins:
 // const int HX711_dout = 25;  // mcu > HX711 dout pin
 // const int HX711_sck = 26;   // mcu > HX711 sck pin
@@ -78,6 +80,8 @@ void setup() {
             calibrationValue);  // set calibration value (float)
         Serial.println("LoadCell is complete");
     }
+
+    ESP.wdtEnable(WATCHDOG_MS);
 
     initWiFi();
     initMQTT();
@@ -178,6 +182,8 @@ void loop() {
         }
 
     }
+
+    ESP.wdtFeed();
 
     delay(100);
 }
