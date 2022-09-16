@@ -1,18 +1,50 @@
 #include <ESP8266WiFi.h>
 #include <HX711_ADC.h>
 #include <PubSubClient.h>
+#include <ArduinoOTA.h>
 
 #define WATCHDOG_MS 30000
 
-// pins:
-// const int HX711_dout = 25;  // mcu > HX711 dout pin
-// const int HX711_sck = 26;   // mcu > HX711 sck pin
+//LC1: -1088.26
+//LC2: 986.64
+float calibrationValue = 986.64;
 
-const int HX711_dout = 13;  // mcu > HX711 dout pin
-const int HX711_sck = 15;   // mcu > HX711 sck pin
+const char *mqtt_server = "littlerascal";
+const char *CLIENT_NAME = "feeder";
+const char *MQTT_USER = "sensor_writer";
+const char *MQTT_PASSWORD = "fln0eFi79yhK";
+
+const char *HOSTNAME = "feedermonitor02";
+const char *WILL_TOPIC = "/sensors/feeders/2/status";
+const char *RAW_TOPIC = "/sensors/feeders/2/raw";
+const char *AVERAGE_TOPIC = "/sensors/feeders/2/average";
+const char *TRIGGER_TOPIC = "/sensors/feeders/2/trigger";
+const char *MESSAGE_TOPIC = "/sensors/feeders/2/message";
+
+const int OTA_PORT = 8267;
+const char *OTA_PASSWORD = "dlafjsdlk";
 
 // HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+void println(const char *s) {
+  Serial.println(s);
+  client.publish(MESSAGE_TOPIC, s);
+}
+
+void println(const String &s) {
+  Serial.println(s);
+  client.publish(MESSAGE_TOPIC, s.c_str());
+}
+
+
+void print(const char *s) {
+  Serial.print(s);
+  client.publish(MESSAGE_TOPIC, s);
+}
 
 void halt() {
     while (1) {
@@ -22,7 +54,8 @@ void halt() {
 
 void initWiFi() {
     WiFi.mode(WIFI_STA);
-    WiFi.begin("FakeSun", "T4vyt3FYWCs9YjChzuh7DeQV");
+    // WiFi.begin("FakeSun", "T4vyt3FYWCs9YjChzuh7DeQV");
+    WiFi.begin("OBLIVION", "t4unjath0mson");
     Serial.println("Conencting to WiFI");
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
@@ -33,22 +66,13 @@ void initWiFi() {
     Serial.println(WiFi.localIP());
 }
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-const char *mqtt_server = "littlerascal";
-const char *CLIENT_NAME = "feeder";
-const char *MQTT_USER = "sensor_writer";
-const char *MQTT_PASSWORD = "fln0eFi79yhK";
-const char *WILL_TOPIC = "/sensors/feeder/status";
-
 void initMQTT() {
     client.setServer(mqtt_server, 1883);
     client.connect(CLIENT_NAME, MQTT_USER, MQTT_PASSWORD, WILL_TOPIC,
                    (uint8_t)1, true, "offline");
 
     if (client.state() != MQTT_CONNECTED) {
-        Serial.print("MQTT Failed: ");
+        print("MQTT Failed: ");
         Serial.println(client.state());
 
         halt();
@@ -59,6 +83,45 @@ void initMQTT() {
     client.publish(WILL_TOPIC, "online");
 }
 
+void initOTA() {
+    ArduinoOTA.setPort(OTA_PORT);
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    ArduinoOTA.setHostname(HOSTNAME);
+
+    ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_FS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      println("End Failed");
+    }
+  });
+  ArduinoOTA.begin();
+}
+
 void setup() {
     Serial.begin(115200);
     delay(10);
@@ -66,8 +129,6 @@ void setup() {
     Serial.println("setup begin");
 
     LoadCell.begin();
-
-    float calibrationValue = -1088.26;
 
     LoadCell.start(2000, true);
 
@@ -81,9 +142,10 @@ void setup() {
         Serial.println("LoadCell is complete");
     }
 
-    ESP.wdtEnable(WATCHDOG_MS);
+    // ESP.wdtEnable(WATCHDOG_MS);
 
     initWiFi();
+    initOTA();
     initMQTT();
 }
 
@@ -126,7 +188,7 @@ void loop() {
     float delta = calculatedAverage - val;
 
     dtostrf(val, 5, 3, fmt);
-    client.publish("/sensors/feeder/raw", fmt);
+    client.publish(RAW_TOPIC, fmt);
 
     // In planned installation, increase in weight should be a more negative
     // number. delta should
@@ -137,22 +199,22 @@ void loop() {
             && initialized) {
         //Triggered
         if(!triggered) {
-            client.publish("/sensors/feeder/trigger", "true");
+            client.publish(TRIGGER_TOPIC, "true");
             triggered = true;
 
-            Serial.print("Triggered: ");
-            Serial.println(fmt);
+            print("Triggered: ");
+            println(fmt);
         }
 
         triggeredReadings++;
     } else {
         if(triggered) {
-            client.publish("/sensors/feeder/trigger", "false");
+            client.publish(TRIGGER_TOPIC, "false");
             triggered = false;
             triggeredReadings = 0;
 
-            Serial.print("Trigger Cleared: ");
-            Serial.println(fmt);
+            print("Trigger Cleared: ");
+            println(fmt);
         }
         
         WINDOW[averagingReadingLocation++] = val;
@@ -174,16 +236,18 @@ void loop() {
             if(averagingReadingLocation == 0) {
                 dtostrf(calculatedAverage, 5, 3, fmt);
 
-                Serial.print("Calculated average: ");
+                print("Calculated average: ");
                 Serial.println(fmt);
 
-                client.publish("/sensors/feeder/average", fmt);
+                client.publish(AVERAGE_TOPIC, fmt);
             }
         }
 
     }
 
     ESP.wdtFeed();
+
+    ArduinoOTA.handle();
 
     delay(100);
 }
