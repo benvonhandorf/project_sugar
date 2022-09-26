@@ -40,16 +40,24 @@ class CaptureProcess(Process):
 
                             self.video_writer = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'h264'), self.frame_rate, frame_size)
 
+                            self.frames_captured = 0
+                            self.capture_started = datetime.datetime.now()
+
                         self.record_until = new_value
 
                 ret, frame = self.video_capture.read()
 
                 if ret and self.video_writer:
                     self.video_writer.write(frame)
+                    self.frames_captured += 1
 
                 if self.video_writer and self.record_until < datetime.datetime.now().timestamp():
-                    print(f'{self.camera_name}: Completing')
+                    duration = datetime.datetime.now() - self.capture_started
+
+                    print(f'{self.camera_name}: Completing.  Captured {self.frames_captured} frames, {duration} duration, {self.frames_captured/duration.total_seconds()} fps.')
+
                     self.video_writer.release()
+
                     self.video_writer = None
                     self.record_until = None
 

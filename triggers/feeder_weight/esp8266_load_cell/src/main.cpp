@@ -7,6 +7,7 @@
 #define WATCHDOG_MS 30000
 
 #if FM==1
+
 float calibrationValue = -970.83;
 
 const char *HOSTNAME = "feedermonitor01";
@@ -15,8 +16,10 @@ const char *RAW_TOPIC = "/sensors/feeders/1/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/1/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/1/trigger";
 const char *MESSAGE_TOPIC = "/sensors/feeders/1/message";
+const char *RSSI_TOPIC = "/sensors/feeders/1/rssi";
 
 #elif FM==2
+
 float calibrationValue = 986.94;
 
 const char *HOSTNAME = "feedermonitor02";
@@ -25,7 +28,10 @@ const char *RAW_TOPIC = "/sensors/feeders/2/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/2/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/2/trigger";
 const char *MESSAGE_TOPIC = "/sensors/feeders/2/message";
+const char *RSSI_TOPIC = "/sensors/feeders/2/rssi";
+
 #elif FM==3
+
 float calibrationValue = 906.79;
 
 const char *HOSTNAME = "feedermonitor03";
@@ -34,6 +40,8 @@ const char *RAW_TOPIC = "/sensors/feeders/3/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/3/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/3/trigger";
 const char *MESSAGE_TOPIC = "/sensors/feeders/3/message";
+const char *RSSI_TOPIC = "/sensors/feeders/3/rssi";
+
 #endif
 
 const char *mqtt_server = "littlerascal";
@@ -51,17 +59,17 @@ PubSubClient client(espClient);
 
 void println(const char *s) {
     Serial.println(s);
-    client.publish(MESSAGE_TOPIC, s);
+    client.publish(MESSAGE_TOPIC, s, true);
 }
 
 void println(const String &s) {
     Serial.println(s);
-    client.publish(MESSAGE_TOPIC, s.c_str());
+    client.publish(MESSAGE_TOPIC, s.c_str(), true);
 }
 
 void print(const char *s) {
     Serial.print(s);
-    client.publish(MESSAGE_TOPIC, s);
+    client.publish(MESSAGE_TOPIC, s, true);
 }
 
 void halt() {
@@ -70,10 +78,13 @@ void halt() {
     }
 }
 
+const char *WIFI_AP_NAME = "OBLIVION";
+const char *WIFI_PASS = "t4unjath0mson";
+
 void initWiFi() {
     WiFi.mode(WIFI_STA);
     // WiFi.begin("FakeSun", "T4vyt3FYWCs9YjChzuh7DeQV");
-    WiFi.begin("OBLIVION", "t4unjath0mson");
+    WiFi.begin(WIFI_AP_NAME, WIFI_PASS);
     Serial.println("Conencting to WiFI");
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
@@ -102,7 +113,7 @@ void initMQTT() {
 
     Serial.println("MQTT Connected.");
 
-    client.publish(WILL_TOPIC, "online");
+    client.publish(WILL_TOPIC, "online", true);
 }
 
 void initOTA() {
@@ -163,7 +174,7 @@ void setup() {
         Serial.println("LoadCell is complete");
     }
 
-    // ESP.wdtEnable(WATCHDOG_MS);
+    ESP.wdtEnable(WATCHDOG_MS);
 
     initWiFi();
     initOTA();
@@ -176,7 +187,7 @@ uint16_t averagingReadingLocation = 0;
 float calculatedAverage = 0.0f;
 char fmt[12];
 uint8_t triggeredReadings = 0;
-const float EXPECTED_TRIGGER_MIN = 1.5;
+const float EXPECTED_TRIGGER_MIN = 2.5;
 const float EXPECTED_TRIGGER_MAX = 10.0;
 const float TRIGGER_RESET_INTERVAL = 100;
 bool initialized = false;
@@ -204,12 +215,13 @@ float readData() {
 }
 
 void loop() {
+    bool success = false;
     float val = readData();
 
     float delta = calculatedAverage - val;
 
     dtostrf(val, 5, 3, fmt);
-    client.publish(RAW_TOPIC, fmt);
+    success = client.publish(RAW_TOPIC, fmt, true) || success;
 
     // In planned installation, increase in weight should be a more negative
     // number. delta should
@@ -219,7 +231,7 @@ void loop() {
         triggeredReadings < TRIGGER_RESET_INTERVAL && initialized) {
         // Triggered
         if (!triggered) {
-            client.publish(TRIGGER_TOPIC, "true");
+            success = client.publish(TRIGGER_TOPIC, "true", true) || success;
             triggered = true;
 
             print("Triggered: ");
@@ -229,7 +241,7 @@ void loop() {
         triggeredReadings++;
     } else {
         if (triggered) {
-            client.publish(TRIGGER_TOPIC, "false");
+            success = client.publish(TRIGGER_TOPIC, "false", true) || success;
             triggered = false;
             triggeredReadings = 0;
 
@@ -259,12 +271,22 @@ void loop() {
                 print("Calculated average: ");
                 Serial.println(fmt);
 
-                client.publish(AVERAGE_TOPIC, fmt);
+                success = client.publish(AVERAGE_TOPIC, fmt, true) || success;
             }
         }
     }
 
-    ESP.wdtFeed();
+    int8_t rssi = WiFi.RSSI();
+
+    itoa(rssi, fmt, 10);
+
+    success = client.publish(RSSI_TOPIC, fmt, true);
+
+    if(success && WiFi.isConnected()) {
+        ESP.wdtFeed();
+    } else {
+        println("No successful transmissions.");
+    }
 
     ArduinoOTA.handle();
 
