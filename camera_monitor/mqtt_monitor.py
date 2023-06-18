@@ -61,9 +61,11 @@ class MqttMonitor(Process):
 
             self.logger.debug(f'on_message: {message.topic}: {payload}')
 
-            if bool(payload):
+            if payload == 'true':
+                self.logger.debug(f'recording_start: {bool(payload)}')
                 self.controller.recording_start()
             else:
+                self.logger.debug(f'recording_stop')
                 self.controller.recording_stop()
 
         return on_message_curry

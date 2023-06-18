@@ -22,30 +22,46 @@ class StreamWriter(Process):
         self.stream_configuration = stream_configuration
 
         self.state = StreamWriter.State.Initializing
-        self.writer = None
+        self.video_writer = None
 
     def start_writer(self, timestamp):
         filename = f'{self.stream_configuration.base_filename}-{timestamp}.mkv'
 
+        self.logger.info(f'Writing to {filename}')
+
         self.video_writer = cv2.VideoWriter(filename, 0, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
 
+        if not self.video_writer.isOpened():
+            self.logger.warn(f'Unable to open {filename} for writing')
+
+            self.stop_writer()
+        else:
+            self.state = StreamWriter.State.Started
+
     def stop_writer(self):
-        self.video_writer.release()
-        self.video_writer = None
+        if self.video_writer:
+            self.video_writer.release()
+            self.video_writer = None
+
+        self.state = StreamWriter.State.Stopped
 
     def write_available_frames(self):
-        self.logger.debug(f'Backlog: {self.frame_buffer.len()}')
+        if self.state != StreamWriter.State.Started:
+            return
 
         frames = 0
 
-        while self.frame_buffer:
-            frame = self.frame_buffer.pop()
+        frame = self.frame_buffer.pop()
 
+        while frame is not None:
             self.video_writer.write(frame)
 
             frames += 1
+            
+            frame = self.frame_buffer.pop()
 
-        self.logger.debug(f'Backlog written: {frames}')
+        if frames > 0:
+            self.logger.debug(f'Backlog written: {frames}')
         
     def run(self):
         self.logger = common.get_logger('StreamWriter')
@@ -65,8 +81,6 @@ class StreamWriter(Process):
                     if command:
                         self.logger.debug(f'Beginning recording')
 
-                        self.state = StreamWriter.State.Started
-
                         self.start_writer(datetime.now().isoformat())
 
                         self.write_available_frames()
@@ -74,9 +88,8 @@ class StreamWriter(Process):
                     else :
                         self.logger.debug(f'Ending recording')
 
-                        self.state = StreamWriter.State.Stopped
-
                         self.stop_writer()
+
             if self.state == StreamWriter.State.Started:
                 self.write_available_frames()
                 

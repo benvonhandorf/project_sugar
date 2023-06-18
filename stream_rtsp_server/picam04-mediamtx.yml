@@ -43,12 +43,12 @@ api: no
 apiAddress: 127.0.0.1:9997
 
 # Enable Prometheus-compatible metrics.
-metrics: yes
+metrics: no
 # Address of the metrics listener.
 metricsAddress: 127.0.0.1:9998
 
 # Enable pprof-compatible endpoint to monitor performances.
-pprof: yes
+pprof: no
 # Address of the pprof listener.
 pprofAddress: 127.0.0.1:9999
 
@@ -233,16 +233,19 @@ webrtcICETCPMuxAddress:
 # The settings under the path "all" are applied to all paths that do not match
 # another entry.
 paths:
-  camera0:
-    source: publisher
-    publishIPs: [127.0.0.1]
-    # nVidia Jetson Nano TX2 - Stream Camera 0
-    runOnDemand: ./run_stream_camera0.sh
-    runOnInit: 
-  camera1:
-    source: publisher
-    publishIPs: [127.0.0.1]
-    runOnInit:
+  cam:
+    source: rpiCamera
+    rpiCameraTuningFile: /usr/share/libcamera/ipa/raspberrypi/imx708.json
+    rpiCameraWidth: 640
+    rpiCameraHeight: 480
+    rpiCameraTextOverlayEnable: true
+    rpiCameraTextOverlay: '%Y-%m-%d %H:%M:%S'
+    rpiCameraAfWindow: 0.36,0.28,0.1,0.5
+    # rpiCameraAfMode: continuous
+    rpiCameraAfMode: auto
+    # rpiCameraLensPosition: 2
+
+    
   all:
     # Source of the stream. This can be:
     # * publisher -> the stream is published by a RTSP or RTMP client
@@ -331,6 +334,86 @@ paths:
 
     # RTSP URL which clients will be redirected to.
     sourceRedirect:
+
+    ###############################################
+    # Raspberry Pi Camera path parameters (when source is "rpiCamera")
+
+    # ID of the camera
+    rpiCameraCamID: 0
+    # width of frames
+    rpiCameraWidth: 1920
+    # height of frames
+    rpiCameraHeight: 1080
+    # flip horizontally
+    rpiCameraHFlip: false
+    # flip vertically
+    rpiCameraVFlip: false
+    # brightness [-1, 1]
+    rpiCameraBrightness: 0
+    # contrast [0, 16]
+    rpiCameraContrast: 1
+    # saturation [0, 16]
+    rpiCameraSaturation: 1
+    # sharpness [0, 16]
+    rpiCameraSharpness: 1
+    # exposure mode.
+    # values: normal, short, long, custom
+    rpiCameraExposure: normal
+    # auto-white-balance mode.
+    # values: auto, incandescent, tungsten, fluorescent, indoor, daylight, cloudy, custom
+    rpiCameraAWB: auto
+    # denoise operating mode.
+    # values: off, cdn_off, cdn_fast, cdn_hq
+    rpiCameraDenoise: "off"
+    # fixed shutter speed, in microseconds.
+    rpiCameraShutter: 0
+    # metering mode of the AEC/AGC algorithm.
+    # values: centre, spot, matrix, custom
+    rpiCameraMetering: centre
+    # fixed gain
+    rpiCameraGain: 0
+    # EV compensation of the image [-10, 10]
+    rpiCameraEV: 0
+    # Region of interest, in format x,y,width,height
+    rpiCameraROI:
+    # tuning file
+    rpiCameraTuningFile:
+    # sensor mode, in format [width]:[height]:[bit-depth]:[packing]
+    # bit-depth and packing are optional.
+    rpiCameraMode:
+    # frames per second
+    rpiCameraFPS: 30
+    # period between IDR frames
+    rpiCameraIDRPeriod: 60
+    # bitrate
+    rpiCameraBitrate: 1000000
+    # H264 profile
+    rpiCameraProfile: main
+    # H264 level
+    rpiCameraLevel: '4.1'
+    # Autofocus mode
+    # values: auto, manual, continuous
+    rpiCameraAfMode: auto
+    # Autofocus range
+    # values: normal, macro, full
+    rpiCameraAfRange: normal
+    # Autofocus speed
+    # values: normal, fast
+    rpiCameraAfSpeed: normal
+    # Lens position (for manual autofocus only), will be set to focus to a specific distance
+    # calculated by the following formula: d = 1 / value
+    # Examples: 0 moves the lens to infinity.
+    #           0.5 moves the lens to focus on objects 2m away.
+    #           2 moves the lens to focus on objects 50cm away.
+    rpiCameraLensPosition: 0.0
+    # Specifies the autofocus window, in the form x,y,width,height where the coordinates
+    # are given as a proportion of the entire image.
+    rpiCameraAfWindow:
+    # enables printing text on each frame.
+    rpiCameraTextOverlayEnable: false
+    # text that is printed on each frame.
+    # format is the one of the strftime() function.
+    rpiCameraTextOverlay: '%Y-%m-%d %H:%M:%S - MediaMTX'
 
     ###############################################
     # external commands path parameters
