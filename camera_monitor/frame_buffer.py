@@ -15,6 +15,9 @@ class FrameBuffer(object):
     def append(self, x):
         self.deque.append(x)
 
+    def pop(self, x):
+        return self.deque.popleft()
+
     def snapshot(self):
         return list(self.deque.copy())
 

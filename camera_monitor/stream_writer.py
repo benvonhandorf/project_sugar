@@ -33,17 +33,19 @@ class StreamWriter(Process):
         self.video_writer.release()
         self.video_writer = None
 
-    def write_backlog(self):
+    def write_available_frames(self):
         self.logger.debug(f'Backlog: {self.frame_buffer.len()}')
 
-        existing_frames = self.frame_buffer.snapshot()
+        frames = 0
 
-        self.logger.debug(f'Writing backlog: {len(existing_frames)}')
+        while self.frame_buffer:
+            frame = self.frame_buffer.pop()
 
-        for frame in existing_frames:
             self.video_writer.write(frame)
 
-        self.logger.debug(f'Backlog written: {len(existing_frames)}')
+            frames += 1
+
+        self.logger.debug(f'Backlog written: {frames}')
         
     def run(self):
         self.logger = common.get_logger('StreamWriter')
@@ -67,7 +69,7 @@ class StreamWriter(Process):
 
                         self.start_writer(datetime.now().isoformat())
 
-                        self.write_backlog()
+                        self.write_available_frames()
 
                     else :
                         self.logger.debug(f'Ending recording')
@@ -75,8 +77,8 @@ class StreamWriter(Process):
                         self.state = StreamWriter.State.Stopped
 
                         self.stop_writer()
-
-            # TODO: Figure out the best way to get post-backlog frames into the file
+            if self.state == StreamWriter.State.Started:
+                self.write_available_frames()
                 
 
 
