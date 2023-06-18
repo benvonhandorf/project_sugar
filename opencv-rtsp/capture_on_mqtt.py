@@ -4,9 +4,10 @@ import paho.mqtt.client as mqtt
 from capture_process import CaptureProcess
 
 CAMERAS = [
-        { 'name': 'picam2', 'url': 'rtsp://littlerascal:8554/picam2', 'frame_width': 1280, 'frame_height': 720, 'frame_rate': 30 },
-        { 'name': 'hqcam', 'url': 'rtsp://littlerascal:8554/hqcam', 'frame_width': 640, 'frame_height': 480, 'frame_rate': 90 },
-        # { 'name': 'polecat', 'url': 'rtsp://littlerascal:8554/polecat', 'frame_width': 1280, 'frame_height': 720, 'frame_rate': 30 }
+        #{ 'name': 'picam2', 'url': 'rtsp://littlerascal:8554/picam2', 'frame_width': 640, 'frame_height': 480, 'frame_rate': 30 },
+#        { 'name': 'picam04', 'url': 'rtsp://littlerascal:8554/picam04', 'frame_width': 1280, 'frame_height': 720, 'frame_rate': 30 },
+        # { 'name': 'hqcam', 'url': 'rtsp://littlerascal:8554/hqcam', 'frame_width': 640, 'frame_height': 480, 'frame_rate': 90 },
+        { 'name': 'polecat', 'url': 'rtsp://littlerascal:8554/polecat', 'frame_width': 640, 'frame_height': 480, 'frame_rate': 30 }
     ]
 
 def create_thread_for_camera(camera):

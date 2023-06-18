@@ -12,6 +12,7 @@ float calibrationValue = -970.83;
 
 const char *HOSTNAME = "feedermonitor01";
 const char *WILL_TOPIC = "/sensors/feeders/1/status";
+const char *RESET_TOPIC = "/sensors/feeders/3/reset";
 const char *RAW_TOPIC = "/sensors/feeders/1/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/1/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/1/trigger";
@@ -24,6 +25,7 @@ float calibrationValue = 986.94;
 
 const char *HOSTNAME = "feedermonitor02";
 const char *WILL_TOPIC = "/sensors/feeders/2/status";
+const char *RESET_TOPIC = "/sensors/feeders/2/reset";
 const char *RAW_TOPIC = "/sensors/feeders/2/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/2/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/2/trigger";
@@ -36,6 +38,7 @@ float calibrationValue = 906.79;
 
 const char *HOSTNAME = "feedermonitor03";
 const char *WILL_TOPIC = "/sensors/feeders/3/status";
+const char *RESET_TOPIC = "/sensors/feeders/3/reset";
 const char *RAW_TOPIC = "/sensors/feeders/3/raw";
 const char *AVERAGE_TOPIC = "/sensors/feeders/3/average";
 const char *TRIGGER_TOPIC = "/sensors/feeders/3/trigger";
@@ -81,7 +84,10 @@ void halt() {
 const char *WIFI_AP_NAME = "OBLIVION";
 const char *WIFI_PASS = "t4unjath0mson";
 
-void initWiFi() {
+uint32_t reset_reason = 0;
+uint32_t reset_exception = 0;
+
+void initWiFi_block() {
     WiFi.mode(WIFI_STA);
     // WiFi.begin("FakeSun", "T4vyt3FYWCs9YjChzuh7DeQV");
     WiFi.begin(WIFI_AP_NAME, WIFI_PASS);
@@ -99,7 +105,7 @@ void initWiFi() {
     }
 }
 
-void initMQTT() {
+void initMQTT_block() {
     client.setServer(mqtt_server, 1883);
     client.connect(HOSTNAME, MQTT_USER, MQTT_PASSWORD, WILL_TOPIC,
                    (uint8_t)1, true, "offline");
@@ -114,9 +120,10 @@ void initMQTT() {
     Serial.println("MQTT Connected.");
 
     client.publish(WILL_TOPIC, "online", true);
+    client.publish(RESET_TOPIC, String(reset_reason).c_str(), true);
 }
 
-void initOTA() {
+void initOTA_block() {
     ArduinoOTA.setPort(OTA_PORT);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.setHostname(HOSTNAME);
@@ -155,8 +162,15 @@ void initOTA() {
 }
 
 void setup() {
+    struct rst_info *rst_info = system_get_rst_info();
+
+    reset_reason = rst_info->reason;
+    reset_exception = rst_info->exccause;
+
     Serial.begin(115200);
     delay(10);
+
+    Serial.printf("Reset reason: %d\n", rst_info->reason);
 
     Serial.println("setup begin");
 
@@ -176,9 +190,9 @@ void setup() {
 
     ESP.wdtEnable(WATCHDOG_MS);
 
-    initWiFi();
-    initOTA();
-    initMQTT();
+    initWiFi_block();
+    initOTA_block();
+    initMQTT_block();
 }
 
 const uint32_t AVERAGING_WINDOW_LENGTH = 10;
@@ -280,14 +294,20 @@ void loop() {
 
     itoa(rssi, fmt, 10);
 
-    success = client.publish(RSSI_TOPIC, fmt, true);
+    if(WiFi.isConnected()) {
+        success = client.publish(RSSI_TOPIC, fmt, true);
 
-    if(success && WiFi.isConnected()) {
-        ESP.wdtFeed();
-    } else {
-        println("No successful transmissions.");
+        if(success ) {
+            ESP.wdtFeed();
+        } else {
+            println("No successful transmissions.");
+            ESP.restart();
+        }
+    }  else {
+        println("WiFi not connected.");
+        ESP.restart();
     }
-
+    
     ArduinoOTA.handle();
 
     delay(100);
