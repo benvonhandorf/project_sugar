@@ -161,6 +161,63 @@ void initOTA_block() {
     ArduinoOTA.begin();
 }
 
+const uint32_t AVERAGING_WINDOW_LENGTH = 10;
+uint16_t readingCount = 0;
+float calculatedAverage = 0.0f;
+
+char fmt[12];
+uint8_t triggeredReadings = 0;
+const float EXPECTED_TRIGGER_MIN = 1.5;
+const float EXPECTED_TRIGGER_MAX = 40.0;
+const float TRIGGER_RESET_INTERVAL = 800;
+bool initialized = false;
+bool triggered = false;
+
+float readDataWithAveraging() {
+    float value = 0.0f;
+
+    for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
+        if (LoadCell.update()) {
+            value += LoadCell.getData();
+
+            delay(10);
+        }
+    }
+
+    value /= (float) AVERAGING_WINDOW_LENGTH;
+
+    return value;
+}
+
+void readStartupData() {
+    if (readingCount == 0) {
+        while (readingCount < AVERAGING_WINDOW_LENGTH) {
+            calculatedAverage += readDataWithAveraging();
+            readingCount++;
+
+            delay(50);
+        }
+
+        calculatedAverage /= (float)AVERAGING_WINDOW_LENGTH;
+    }
+
+    initialized = true;
+    readingCount = 0;
+
+    dtostrf(calculatedAverage, 5, 3, fmt);
+    print("Startup Data Acquired: ");
+    println(fmt);
+}
+
+void publishTrigger(bool triggered, float delta) {
+    dtostrf(delta, 5, 3, fmt);
+
+    String msg = "{ \"value\": " + String(triggered) + ", \"delta\": " +
+                 String(delta) + "}";
+
+    client.publish(TRIGGER_TOPIC, msg.c_str(), true);
+}
+
 void setup() {
     struct rst_info *rst_info = system_get_rst_info();
 
@@ -193,100 +250,55 @@ void setup() {
     initWiFi_block();
     initOTA_block();
     initMQTT_block();
-}
 
-const uint32_t AVERAGING_WINDOW_LENGTH = 10;
-float WINDOW[AVERAGING_WINDOW_LENGTH];
-uint16_t averagingReadingLocation = 0;
-float calculatedAverage = 0.0f;
-char fmt[12];
-uint8_t triggeredReadings = 0;
-const float EXPECTED_TRIGGER_MIN = 2.5;
-const float EXPECTED_TRIGGER_MAX = 10.0;
-const float TRIGGER_RESET_INTERVAL = 100;
-bool initialized = false;
-bool triggered = false;
+    readStartupData();
 
-float readData() {
-    float readWindow[AVERAGING_WINDOW_LENGTH];
-    uint16_t readLocation = 0;
-
-    while (readLocation < AVERAGING_WINDOW_LENGTH) {
-        if (LoadCell.update()) {
-            readWindow[readLocation++] = LoadCell.getData();
-        }
-    }
-
-    float avg_value = 0.0f;
-
-    for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
-        avg_value += readWindow[i];
-    }
-
-    avg_value /= (float)AVERAGING_WINDOW_LENGTH;
-
-    return avg_value;
+    publishTrigger(false, 0.0f);
 }
 
 void loop() {
     bool success = false;
-    float val = readData();
+    float val = readDataWithAveraging();
+    readingCount++;
 
-    float delta = calculatedAverage - val;
+    float delta = abs(calculatedAverage - val);
 
     dtostrf(val, 5, 3, fmt);
     success = client.publish(RAW_TOPIC, fmt, true) || success;
 
-    // In planned installation, increase in weight should be a more negative
-    // number. delta should
+    println(fmt);
 
-    if (abs(delta) > EXPECTED_TRIGGER_MIN &&
-        abs(delta) < EXPECTED_TRIGGER_MAX &&
+    if (delta > EXPECTED_TRIGGER_MIN &&
+        delta < EXPECTED_TRIGGER_MAX &&
         triggeredReadings < TRIGGER_RESET_INTERVAL && initialized) {
         // Triggered
         if (!triggered) {
-            success = client.publish(TRIGGER_TOPIC, "true", true) || success;
-            triggered = true;
+            publishTrigger(true, delta);
 
-            print("Triggered: ");
-            println(fmt);
+            print("Triggered.");
         }
 
         triggeredReadings++;
     } else {
         if (triggered) {
-            success = client.publish(TRIGGER_TOPIC, "false", true) || success;
+            publishTrigger(false, delta);
+
             triggered = false;
             triggeredReadings = 0;
 
-            print("Trigger Cleared: ");
+            print("Trigger Cleared.");
             println(fmt);
         }
+        
+        calculatedAverage = (calculatedAverage * 0.9) + (val * 0.1);
 
-        WINDOW[averagingReadingLocation++] = val;
+        if (readingCount % 20 == 0) {
+            dtostrf(calculatedAverage, 5, 3, fmt);
 
-        if (averagingReadingLocation >= AVERAGING_WINDOW_LENGTH) {
-            initialized = true;
-            averagingReadingLocation = 0;
-        }
+            print("Calculated average: ");
+            Serial.println(fmt);
 
-        if (initialized) {
-            float avg_value = 0.0f;
-            for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
-                avg_value += WINDOW[i];
-            }
-
-            avg_value /= AVERAGING_WINDOW_LENGTH;
-            calculatedAverage = avg_value;
-
-            if (averagingReadingLocation == 0) {
-                dtostrf(calculatedAverage, 5, 3, fmt);
-
-                print("Calculated average: ");
-                Serial.println(fmt);
-
-                success = client.publish(AVERAGE_TOPIC, fmt, true) || success;
-            }
+            success = client.publish(AVERAGE_TOPIC, fmt, true) || success;
         }
     }
 
