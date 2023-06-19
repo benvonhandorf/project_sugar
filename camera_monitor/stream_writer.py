@@ -25,7 +25,9 @@ class StreamWriter(Process):
         self.video_writer = None
 
     def start_writer(self, timestamp):
-        filename = f'{self.stream_configuration.base_filename}-{timestamp}.mkv'
+        timestamp_string = datetime.fromtimestamp(timestamp/1000).isoformat()
+
+        filename = f'{self.stream_configuration.base_filename}-{timestamp_string}.mkv'
 
         self.logger.info(f'Writing to {filename}')
 
@@ -69,16 +71,16 @@ class StreamWriter(Process):
             frame = self.frame_buffer.pop()
 
         if self.frames % 100 == 0:
-            self.logger.debug(f'Backlog written: {self.frames}')
+            self.logger.debug(f'Frames written: {self.frames}')
 
     def process_command(self, command):
         if command is not None:
             self.logger.debug(f'Received command: {command}')
 
-            if command:
+            if command['value']:
                 self.logger.debug(f'Beginning recording')
 
-                self.start_writer(datetime.now().isoformat())
+                self.start_writer(command['timestamp'])
 
                 self.write_available_frames()
 

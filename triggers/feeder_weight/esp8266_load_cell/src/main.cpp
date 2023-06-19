@@ -162,23 +162,27 @@ void initOTA_block() {
 }
 
 const uint32_t AVERAGING_WINDOW_LENGTH = 10;
+uint16_t averagedReadings = 0;
 uint16_t readingCount = 0;
 float calculatedAverage = 0.0f;
 
 char fmt[12];
 uint8_t triggeredReadings = 0;
-const float EXPECTED_TRIGGER_MIN = 1.5;
+const float EXPECTED_TRIGGER_MIN = 1.75;
 const float EXPECTED_TRIGGER_MAX = 40.0;
-const float TRIGGER_RESET_INTERVAL = 800;
+const float TRIGGER_RESET_INTERVAL = 100;
 bool initialized = false;
 bool triggered = false;
 
 float readDataWithAveraging() {
     float value = 0.0f;
+    averagedReadings = 0;
 
-    for (uint16_t i = 0; i < AVERAGING_WINDOW_LENGTH; i++) {
+    while(averagedReadings < AVERAGING_WINDOW_LENGTH)  {
         if (LoadCell.update()) {
             value += LoadCell.getData();
+
+            averagedReadings++;
 
             delay(10);
         }
@@ -274,6 +278,8 @@ void loop() {
         // Triggered
         if (!triggered) {
             publishTrigger(true, delta);
+
+            triggered = true;
 
             print("Triggered.");
         }

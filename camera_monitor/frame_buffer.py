@@ -14,6 +14,7 @@ class FrameBuffer(object):
     
     def append(self, x):
         self.deque.append(x)
+        self.latest_frame = x
 
     def pop(self):
         if self.deque:
@@ -22,6 +23,6 @@ class FrameBuffer(object):
             return None
 
     def snapshot(self):
-        return list(self.deque.copy())
+        return self.latest_frame
 
 FrameBufferManager.register('FrameBuffer', FrameBuffer)

@@ -10,10 +10,11 @@ from multiprocessing import Queue, log_to_stderr
 from controller import Controller
 from mqtt_monitor import MqttConfiguration, MqttMonitor
 import common
-from multiprocessing_logging import install_mp_handler
 
 if __name__ == '__main__':
     logger = common.get_logger()
+
+    logger.info('Starting')
     
     # stream_configuration = StreamConfiguration('rtsp://razorcrest:8554/camera0', 'razorcrest-video', 30, 1280, 720)
     # topics = ['/cameras/razorcrest/camera0/record']

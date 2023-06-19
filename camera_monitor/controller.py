@@ -5,13 +5,13 @@ class Controller:
         self.recording_queue = recording_queue
         self.snapshot_queue = snapshot_queue
 
-    def recording_start(self):
-        self.recording_queue.put(True)
+    def recording_start(self, data):
+        self.recording_queue.put(data)
 
-    def recording_stop(self):
-        self.recording_queue.put(False)
+    def recording_stop(self, data):
+        self.recording_queue.put(data)
 
-    def snapshot(self):
+    def snapshot(self, timestamp: str):
         self.snapshot_queue.put(True)
 
     def __getstate__(self):

@@ -2,6 +2,7 @@ from multiprocessing import Process
 import paho.mqtt.client as mqtt
 import logging
 import common
+import json
 
 from controller import Controller
 
@@ -57,16 +58,31 @@ class MqttMonitor(Process):
 
     def on_message(self):
         def on_message_curry(client, userdata, message):
+            parts = message.topic.split('/')
+
             payload = message.payload.decode('utf-8')
 
             self.logger.debug(f'on_message: {message.topic}: {payload}')
 
-            if payload == 'true':
-                self.logger.debug(f'recording_start: {bool(payload)}')
-                self.controller.recording_start()
-            else:
-                self.logger.debug(f'recording_stop')
-                self.controller.recording_stop()
+            topic_end = parts.pop()
+
+            if topic_end == 'record':
+                payload_obj = json.loads(payload)
+
+                if type(payload_obj) is not dict:
+                    return
+
+                if bool(payload_obj.get('value')):
+                    self.logger.debug(f'recording_start: {payload_obj}')
+                    self.controller.recording_start(payload_obj)
+                else:
+                    self.logger.debug(f'recording_stop')
+                    self.controller.recording_stop(payload_obj)
+            elif topic_end == 'snapshot':
+                payload_obj = json.loads(payload)
+
+                self.logger.debug(f'snapshot: {payload_obj}')
+                self.controller.snapshot(payload_obj)
 
         return on_message_curry
 
