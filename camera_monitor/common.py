@@ -14,6 +14,7 @@ def get_logger(name=None):
 
     logger.addHandler(stream_handler)
 
-    install_mp_handler(logger)
+    if name is None:
+        install_mp_handler(logger)
 
     return logger

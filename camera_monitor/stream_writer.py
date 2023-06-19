@@ -46,13 +46,14 @@ class StreamWriter(Process):
             self.video_writer.release()
             self.video_writer = None
 
-        timestamp_end = perf_counter()
-        duration = timestamp_end - self.timestamp_start
-        framerate = self.frames / duration
+        if self.state == StreamWriter.State.Started:
+            timestamp_end = perf_counter()
+            duration = timestamp_end - self.timestamp_start
+            framerate = self.frames / duration
 
-        self.logger.info(f'Wrote {self.frames} frames in {duration} seconds: {framerate} fps')
+            self.logger.info(f'Wrote {self.frames} frames in {duration} seconds: {framerate} fps')
 
-        self.state = StreamWriter.State.Stopped
+            self.state = StreamWriter.State.Stopped
 
     def write_available_frames(self):
         if self.state != StreamWriter.State.Started:
@@ -69,6 +70,22 @@ class StreamWriter(Process):
 
         if self.frames % 100 == 0:
             self.logger.debug(f'Backlog written: {self.frames}')
+
+    def process_command(self, command):
+        if command is not None:
+            self.logger.debug(f'Received command: {command}')
+
+            if command:
+                self.logger.debug(f'Beginning recording')
+
+                self.start_writer(datetime.now().isoformat())
+
+                self.write_available_frames()
+
+            else :
+                self.logger.debug(f'Ending recording')
+
+                self.stop_writer()
         
     def run(self):
         self.logger = common.get_logger('StreamWriter')
@@ -79,26 +96,21 @@ class StreamWriter(Process):
 
         while True:
 
-            if not self.queue.empty():
-                command = self.queue.get_nowait()
-
-                if command is not None:
-                    self.logger.debug(f'Received command: {command}')
-
-                    if command:
-                        self.logger.debug(f'Beginning recording')
-
-                        self.start_writer(datetime.now().isoformat())
-
-                        self.write_available_frames()
-
-                    else :
-                        self.logger.debug(f'Ending recording')
-
-                        self.stop_writer()
-
             if self.state == StreamWriter.State.Started:
                 self.write_available_frames()
+
+                if not self.queue.empty():
+                    command = self.queue.get_nowait()
+
+                    self.process_command(command)
+            else:
+                command = self.queue.get(True)
+
+                self.process_command(command)
+
+                    
+
+            
                 
 
 
