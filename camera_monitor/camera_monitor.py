@@ -10,16 +10,21 @@ from multiprocessing import Queue, log_to_stderr
 from controller import Controller
 from mqtt_monitor import MqttConfiguration, MqttMonitor
 import common
+import os
 
 if __name__ == '__main__':
     logger = common.get_logger()
 
     logger.info('Starting')
-    
-    # stream_configuration = StreamConfiguration('rtsp://razorcrest:8554/camera0', 'razorcrest-video', 30, 1280, 720)
-    # topics = ['/cameras/razorcrest/camera0/record']
-    stream_configuration = StreamConfiguration('rtsp://picam01:8554/camera0', 'picam01', 30, 800, 600)
-    topics = ['/cameras/picam01/camera0/record']
+
+    hostname = os.uname()[1]
+
+    if hostname == 'razorcrest':
+        stream_configuration = StreamConfiguration('rtsp://razorcrest:8554/camera0', 'razorcrest-video', 30, 1280, 720)
+        topics = ['/cameras/razorcrest/camera0/record']
+    else:
+        stream_configuration = StreamConfiguration('rtsp://picam01:8554/camera0', 'picam01', 30, 800, 600)
+        topics = ['/cameras/picam01/camera0/record']
 
     frame_buffer_seconds = 5
     frame_buffer_count = stream_configuration.framerate * frame_buffer_seconds
