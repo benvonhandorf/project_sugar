@@ -6,7 +6,7 @@ from enum import Enum
 from stream_configuration import StreamConfiguration
 from datetime import datetime
 import common
-import multiprocessing_logging
+from time import perf_counter
 
 class StreamWriter(Process):
     class State(Enum):
@@ -29,19 +29,28 @@ class StreamWriter(Process):
 
         self.logger.info(f'Writing to {filename}')
 
-        self.video_writer = cv2.VideoWriter(filename, 0, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
+        fourcc = cv2.VideoWriter_fourcc(*'H264')
+        self.video_writer = cv2.VideoWriter(filename, fourcc, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
 
         if not self.video_writer.isOpened():
-            self.logger.warn(f'Unable to open {filename} for writing')
+            self.logger.warn(f'Unable to open {filename} for writing - {self.stream_configuration}')
 
             self.stop_writer()
         else:
             self.state = StreamWriter.State.Started
+            self.frames = 0
+            self.timestamp_start = perf_counter()
 
     def stop_writer(self):
         if self.video_writer:
             self.video_writer.release()
             self.video_writer = None
+
+        timestamp_end = perf_counter()
+        duration = timestamp_end - self.timestamp_start
+        framerate = self.frames / duration
+
+        self.logger.info(f'Wrote {self.frames} frames in {duration} seconds: {framerate} fps')
 
         self.state = StreamWriter.State.Stopped
 
@@ -49,19 +58,17 @@ class StreamWriter(Process):
         if self.state != StreamWriter.State.Started:
             return
 
-        frames = 0
-
         frame = self.frame_buffer.pop()
 
         while frame is not None:
             self.video_writer.write(frame)
 
-            frames += 1
+            self.frames += 1
             
             frame = self.frame_buffer.pop()
 
-        if frames > 0:
-            self.logger.debug(f'Backlog written: {frames}')
+        if self.frames % 100 == 0:
+            self.logger.debug(f'Backlog written: {self.frames}')
         
     def run(self):
         self.logger = common.get_logger('StreamWriter')
