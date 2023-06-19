@@ -70,7 +70,7 @@ class StreamWriter(Process):
             
             frame = self.frame_buffer.pop()
 
-        if self.frames % 100 == 0:
+        if self.frames % 500 == 0:
             self.logger.debug(f'Frames written: {self.frames}')
 
     def process_command(self, command):
