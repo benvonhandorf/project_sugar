@@ -161,7 +161,7 @@ void initOTA_block() {
     ArduinoOTA.begin();
 }
 
-const uint32_t AVERAGING_WINDOW_LENGTH = 20;
+const uint32_t AVERAGING_WINDOW_LENGTH = 10;
 uint16_t averagedReadings = 0;
 uint16_t readingCount = 0;
 float calculatedAverage = 0.0f;
@@ -185,7 +185,9 @@ float readDataWithAveraging() {
 
             averagedReadings++;
 
-            delay(50);
+            ArduinoOTA.handle();
+
+            delay(10);
         }
     }
 
@@ -200,7 +202,9 @@ void readStartupData() {
             calculatedAverage += readDataWithAveraging();
             readingCount++;
 
-            delay(50);
+            ArduinoOTA.handle();
+
+            delay(10);
         }
 
         calculatedAverage /= (float)AVERAGING_WINDOW_LENGTH;
