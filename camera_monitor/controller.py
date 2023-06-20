@@ -11,8 +11,8 @@ class Controller:
     def recording_stop(self, data):
         self.recording_queue.put(data)
 
-    def snapshot(self, timestamp: str):
-        self.snapshot_queue.put(True)
+    def snapshot(self, data):
+        self.snapshot_queue.put(data)
 
     def __getstate__(self):
         return self.__dict__

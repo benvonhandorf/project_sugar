@@ -170,3 +170,5 @@ video/*
 audio/*
 *.wav
 *.mkv
+
+data/*

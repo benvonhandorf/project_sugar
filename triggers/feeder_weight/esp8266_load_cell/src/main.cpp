@@ -161,7 +161,7 @@ void initOTA_block() {
     ArduinoOTA.begin();
 }
 
-const uint32_t AVERAGING_WINDOW_LENGTH = 10;
+const uint32_t AVERAGING_WINDOW_LENGTH = 20;
 uint16_t averagedReadings = 0;
 uint16_t readingCount = 0;
 float calculatedAverage = 0.0f;
@@ -170,6 +170,7 @@ char fmt[12];
 uint8_t triggeredReadings = 0;
 const float EXPECTED_TRIGGER_MIN = 1.75;
 const float EXPECTED_TRIGGER_MAX = 40.0;
+const float TRIGGER_HYSTERISIS = 1.25;
 const float TRIGGER_RESET_INTERVAL = 100;
 bool initialized = false;
 bool triggered = false;
@@ -184,7 +185,7 @@ float readDataWithAveraging() {
 
             averagedReadings++;
 
-            delay(10);
+            delay(50);
         }
     }
 
@@ -219,7 +220,7 @@ void publishTrigger(bool triggered, float delta) {
     String msg = "{ \"value\": " + String(triggered) + ", \"delta\": " +
                  String(delta) + "}";
 
-    client.publish(TRIGGER_TOPIC, msg.c_str(), true);
+    client.publish(TRIGGER_TOPIC, msg.c_str());
 }
 
 void setup() {
@@ -268,7 +269,7 @@ void loop() {
     float delta = abs(calculatedAverage - val);
 
     dtostrf(val, 5, 3, fmt);
-    success = client.publish(RAW_TOPIC, fmt, true) || success;
+    success = client.publish(RAW_TOPIC, fmt) || success;
 
     println(fmt);
 
@@ -284,6 +285,10 @@ void loop() {
             print("Triggered.");
         }
 
+        triggeredReadings++;
+    } else if(delta > TRIGGER_HYSTERISIS) {
+        //We haven't dropped to within 1g of our starting weight
+        //Assume the hummingbird is still present and this is noise in the data
         triggeredReadings++;
     } else {
         if (triggered) {
@@ -304,7 +309,7 @@ void loop() {
             print("Calculated average: ");
             Serial.println(fmt);
 
-            success = client.publish(AVERAGE_TOPIC, fmt, true) || success;
+            success = client.publish(AVERAGE_TOPIC, fmt) || success;
         }
     }
 
@@ -313,7 +318,7 @@ void loop() {
     itoa(rssi, fmt, 10);
 
     if(WiFi.isConnected()) {
-        success = client.publish(RSSI_TOPIC, fmt, true);
+        success = client.publish(RSSI_TOPIC, fmt) || success;
 
         if(success ) {
             ESP.wdtFeed();

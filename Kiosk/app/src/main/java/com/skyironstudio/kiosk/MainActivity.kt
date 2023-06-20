@@ -58,7 +58,7 @@ data class CameraState(val exoPlayer: ExoPlayer, val streams: List<String>) {
 fun CameraStreams() {
     val context = LocalContext.current
 
-    val streams = listOf("rtsp://razorcrest:8554/camera0", "rtsp://picam01:8554/camera0")
+    val streams = listOf("rtsp://picam01:8554/camera0", "rtsp://razorcrest:8554/camera0")
     val mediaItems = streams.map { MediaItem.fromUri(it) }
 
     val exoPlayer = remember {

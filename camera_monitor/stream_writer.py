@@ -14,10 +14,11 @@ class StreamWriter(Process):
         Stopped = 1
         Started = 2
 
-    def __init__(self, queue: Queue, frame_buffer: FrameBuffer, stream_configuration : StreamConfiguration):
+    def __init__(self, queue: Queue, capture_complete_queue: Queue, frame_buffer: FrameBuffer, stream_configuration : StreamConfiguration):
         Process.__init__(self)
 
         self.queue = queue
+        self.capture_complete_queue = capture_complete_queue
         self.frame_buffer = frame_buffer
         self.stream_configuration = stream_configuration
 
@@ -27,15 +28,15 @@ class StreamWriter(Process):
     def start_writer(self, timestamp):
         timestamp_string = datetime.fromtimestamp(timestamp/1000).isoformat()
 
-        filename = f'{self.stream_configuration.base_filename}-{timestamp_string}.mkv'
+        self.filename = f'{self.stream_configuration.directory}/{self.stream_configuration.base_filename}-{timestamp_string}.mkv'
 
-        self.logger.info(f'Writing to {filename}')
+        self.logger.info(f'Writing to {self.filename}')
 
         fourcc = cv2.VideoWriter_fourcc(*'H264')
-        self.video_writer = cv2.VideoWriter(filename, fourcc, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
+        self.video_writer = cv2.VideoWriter(self.filename, fourcc, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
 
         if not self.video_writer.isOpened():
-            self.logger.warn(f'Unable to open {filename} for writing - {self.stream_configuration}')
+            self.logger.warn(f'Unable to open {self.filename} for writing - {self.stream_configuration}')
 
             self.stop_writer()
         else:
@@ -57,20 +58,24 @@ class StreamWriter(Process):
 
             self.state = StreamWriter.State.Stopped
 
+            self.capture_complete_queue.put({'video': True, 'filename': self.filename})
+
     def write_available_frames(self):
         if self.state != StreamWriter.State.Started:
             return
 
         frame = self.frame_buffer.pop()
+        show_logs = False
 
         while frame is not None:
             self.video_writer.write(frame)
 
             self.frames += 1
+            show_logs = True
             
             frame = self.frame_buffer.pop()
 
-        if self.frames % 500 == 0:
+        if show_logs and self.frames % 500 == 0:
             self.logger.debug(f'Frames written: {self.frames}')
 
     def process_command(self, command):
