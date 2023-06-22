@@ -8,6 +8,7 @@ class FrameBufferManager(BaseManager):
 class FrameBuffer(object):
     def __init__(self, frame_count):
         self.deque = deque(maxlen=frame_count)
+        self.latest_frame = None
 
     def len(self):
         return len(self.deque)

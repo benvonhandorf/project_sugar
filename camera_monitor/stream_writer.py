@@ -28,12 +28,21 @@ class StreamWriter(Process):
     def start_writer(self, timestamp):
         timestamp_string = datetime.fromtimestamp(timestamp/1000).isoformat()
 
-        self.filename = f'{self.stream_configuration.directory}/{self.stream_configuration.base_filename}-{timestamp_string}.mkv'
+        self.filename = f'{self.stream_configuration.directory}/{self.stream_configuration.base_filename}-{timestamp_string}.mp4'
 
         self.logger.info(f'Writing to {self.filename}')
 
-        fourcc = cv2.VideoWriter_fourcc(*'H264')
-        self.video_writer = cv2.VideoWriter(self.filename, fourcc, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
+        pipeline = f'appsrc ! video/x-raw, width=(int)1280, height=(int)720, format=(string)RGB, framerate=(fraction)30/1 ' + \
+            '! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! format=(string)NV12 ' + \
+            '! nvv4l2h265enc maxperf-enable=1 bitrate=3000000 ! h265parse ! filesink location="test.mp4" '
+
+        self.logger.debug(f'Pipeline: {pipeline}')
+
+        self.video_writer = cv2.VideoWriter(pipeline, cv2.CAP_GSTREAMER, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
+
+        # fourcc = cv2.VideoWriter_fourcc(*'X264')
+
+        # self.video_writer = cv2.VideoWriter(self.filename, fourcc, self.stream_configuration.framerate, (self.stream_configuration.width, self.stream_configuration.height))
 
         if not self.video_writer.isOpened():
             self.logger.warn(f'Unable to open {self.filename} for writing - {self.stream_configuration}')
@@ -63,31 +72,38 @@ class StreamWriter(Process):
     def write_available_frames(self):
         if self.state != StreamWriter.State.Started:
             return
+        
+        start_frames = self.frames
 
         frame = self.frame_buffer.pop()
-        show_logs = False
 
-        while frame is not None:
+        while frame is not None and (self.frames - start_frames) < 100:
             self.video_writer.write(frame)
 
             self.frames += 1
-            show_logs = True
+
+            if self.frames == 1:
+                self.logger.debug(f'Frame shape: {frame.shape}')
             
             frame = self.frame_buffer.pop()
 
-        if show_logs and self.frames % 500 == 0:
-            self.logger.debug(f'Frames written: {self.frames}')
+            if self.frames % 500 == 0:
+                self.logger.debug(f'Frames written: {self.frames}')
+
 
     def process_command(self, command):
         if command is not None:
             self.logger.debug(f'Received command: {command}')
 
             if command['value']:
-                self.logger.debug(f'Beginning recording')
+                if self.state == StreamWriter.State.Started:
+                    self.logger.info('Already recording')
+                else:
+                    self.logger.debug(f'Beginning recording')
 
-                self.start_writer(command['timestamp'])
+                    self.start_writer(command['timestamp'])
 
-                self.write_available_frames()
+                    self.write_available_frames()
 
             else :
                 self.logger.debug(f'Ending recording')
