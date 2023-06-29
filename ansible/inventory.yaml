@@ -1,0 +1,20 @@
+all:
+  children:
+    camera_hosts:
+      hosts:
+        razorcrest:
+          ansible_user: benvh
+        picam[01:04]:
+      vars:
+        camera_user: camera_stream
+        ansible_user: pi
+    camera_monitors:
+      hosts:
+        razorcrest:
+          ansible_user: benvh
+        picam04:
+        primemover:
+          ansible_user: benvh
+      vars:
+        camera_user: camera_stream
+        ansible_user: pi

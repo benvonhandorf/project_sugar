@@ -29,9 +29,17 @@ def on_control_message(topic, payload):
         logger.info("Shutting down")
         publish_status('shutdown')
 
-        time.sleep(10)
+        time.sleep(5)
 
         os.system(f'sudo shutdown -h now')
+
+    elif payload == "reboot":
+        logger.info("Rebooting")
+        publish_status('reboot')
+
+        time.sleep(5)
+
+        os.system(f'sudo shutdown -r now')
 
 def publish_status(status_value):
     mqtt_connection.publish('status', status_value)
