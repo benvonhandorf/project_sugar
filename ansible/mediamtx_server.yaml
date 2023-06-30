@@ -1,7 +1,7 @@
 - name: Install MediaMTX
   become: true
   become_user: root
-  hosts: razorcrest
+  hosts: camera_hosts
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -77,7 +77,7 @@
         dest: "{{ working_directory }}/"
         owner: "{{ username }}"
         group: "{{ group }}"
-        mode: 0644
+        mode: 0744
       when: camera_tuning_file is not defined
     - name: Install unit file to systemd
       ansible.builtin.template:
