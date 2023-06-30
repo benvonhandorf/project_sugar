@@ -4,10 +4,14 @@ all:
       hosts:
         razorcrest:
           ansible_user: benvh
+          prometheus_arch: arm64
         picam[01:04]:
+        picam04:
+          prometheus_arch: armv7
       vars:
         camera_user: camera_stream
         ansible_user: pi
+        prometheus_arch: armv6
     camera_monitors:
       hosts:
         razorcrest:

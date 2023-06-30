@@ -1,0 +1,2 @@
+---
+- import_playbook: prometheus_node_exporter.yaml
