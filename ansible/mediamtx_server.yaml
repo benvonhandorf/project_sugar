@@ -1,7 +1,7 @@
 - name: Install MediaMTX
   become: true
   become_user: root
-  hosts: camera_hosts
+  hosts: picam03
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -18,6 +18,10 @@
     target_directory: "mediamtx"
     description: "Camera Stream"
   tasks:
+    - name: Update os packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
     - name: Create user
       ansible.builtin.user:
         name: "{{ username }}"
