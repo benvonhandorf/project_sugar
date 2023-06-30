@@ -1,0 +1,117 @@
+- name: Install Camera Controller
+  become: true
+  become_user: root
+  # hosts: camera_hosts
+  hosts: picam04
+  vars:
+    arch_map: 
+      "armv6l": "armv6"
+      "armv7l": "armv7"
+      "aarch64": "arm64v8"
+      "x86_64": "amd64"
+      "amd64": "amd64"
+    archive_arch: "{{ arch_map[ ansible_architecture ] }}"
+    archive_filename: "camera_controller"
+    service_name: "camera_controller"
+    username: "camera_stream"
+    group: "{{ username }}"
+    target_directory: "camera_controller"
+    description: "Camera Controller"
+  tasks:
+    - name: Build deployment archive - Local
+      local_action: 
+        module: ansible.builtin.archive
+        dest: "build/{{ archive_filename }}.tar.gz"
+        path: ../camera_controller/*.py
+    - name: Update os packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+    - name: Ensure Python 3 is installed
+      ansible.builtin.apt:
+        name: python3
+        state: present
+    - name: Ensure Pip 3 is installed
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+    - name: Ensure RPi GPIO is installed
+      ansible.builtin.apt:
+        name: python3-rpi.gpio
+        state: present
+      when: ansible_architecture == "armv7l" or ansible_architecture == "armv6l"
+    - name: Install Paho MQTT
+      ansible.builtin.pip:
+        name: paho-mqtt
+    - name: Create user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /bin/false
+        system: true
+    - name: Retrieve user information
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ username }}"
+    - name: Set working_directory
+      ansible.builtin.set_fact:
+        working_directory: "{{ ansible_facts.getent_passwd.camera_stream[4] }}/{{ target_directory }}"
+    - name: Set exec_start
+      ansible.builtin.set_fact:
+        exec_start: "/usr/bin/python3 {{ working_directory }}/camera_controller.py"    
+    - name: Create temporary directory
+      ansible.builtin.file:
+        state: directory
+        path: "{{ working_directory }}"
+        owner: "{{ username }}"
+        group: "{{ group }}"
+      register: tempdir
+    # - name: Copy archive to destination
+    #   ansible.builtin.copy:
+    #     src: "build/{{ archive_filename }}.tar.gz"
+    #     dest: "{{ working_directory }}/"
+    #     owner: "{{ username }}"
+    #     group: "{{ group }}"
+    #     mode: 0755
+    - name: Unarchive 
+      ansible.builtin.unarchive:
+        src: "build/{{ archive_filename }}.tar.gz"
+        dest: "{{ working_directory }}/"
+        owner: "{{ username }}"
+        group: "{{ group }}"
+        mode: 0644
+    #   ansible.builtin.copy:
+    #     src: "{{ tempdir.path }}/mediamtx"
+    #     dest: "{{ working_directory }}/"
+    #     remote_src: yes
+    #     owner: "{{ username }}"
+    #     group: "{{ group }}"
+    #     mode: 0755
+    - name: Install sudoers file
+      ansible.builtin.template:
+        src: templates/camera_controller.sudoers.j2
+        dest: /etc/sudoers.d/99_camera_controller
+        owner: root
+        group: root
+        mode: 0440
+    - name: Install nvargus sudoers file
+      ansible.builtin.template:
+        src: templates/video.nvargus.sudoers.j2
+        dest: /etc/sudoers.d/99_video_nvargus
+        owner: root
+        group: root
+        mode: 0440
+      when: camera_tuning_file is not defined and arch_map[ ansible_architecture ] == "aarch64"
+    - name: Install unit file to systemd
+      ansible.builtin.template:
+        src: templates/generic.service.j2
+        dest: /etc/systemd/system/{{ service_name }}.service
+        owner: root
+        group: root
+        mode: 0600
+    - name: configure systemd to use service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        enabled: yes
+        state: started
+        name: "{{ service_name }}.service"
+

@@ -1,8 +1,0 @@
-# Starting the stream (sometimes) requires restarting the nvargus-daemon
-
-%video ALL= NOPASSWD: /bin/systemctl restart nvargus-daemon
-
-%camera_stream ALL= NOPASSWD: /bin/systemctl restart camera_stream
-%camera_stream ALL= NOPASSWD: /bin/systemctl start camera_stream
-%camera_stream ALL= NOPASSWD: /bin/systemctl stop camera_stream
-%camera_stream ALL= NOPASSWD: /bin/systemctl status camera_stream

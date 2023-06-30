@@ -1,0 +1,7 @@
+Cmnd_Alias CAMERA_STREAM = /usr/bin/systemctl restart camera_stream, /usr/bin/systemctl start camera_stream, /usr/bin/systemctl stop camera_stream, /usr/bin/systemctl status camera_stream
+Cmnd_Alias CAMERA_MONITOR = /usr/bin/systemctl restart camera_monitor, /usr/bin/systemctl start camera_monitor, /usr/bin/systemctl stop camera_monitor, /usr/bin/systemctl status camera_monitor
+Cmnd_Alias SHUTDOWN = /sbin/shutdown -h now
+
+%camera_stream ALL= NOPASSWD: CAMERA_STREAM
+%camera_stream ALL= NOPASSWD: CAMERA_MONITOR
+%camera_stream ALL= NOPASSWD: SHUTDOWN

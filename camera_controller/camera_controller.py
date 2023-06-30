@@ -59,16 +59,10 @@ if __name__ == "__main__":
 
     hostname = os.uname()[1]
 
-    if hostname == 'razorcrest':
-        root_topic = '/cameras/razorcrest/camera0/'
-        #Razorcrest runs the camera monitor locally, which depends on the camera_stream so this
-        #service will start both.
-        enable_service_name = 'camera_monitor'
-    elif hostname == 'picam01' or hostname == 'primemover':
+    root_topic = f'/cameras/{hostname}/camera0/'
+
+    if  hostname == 'primemover':
         root_topic = '/cameras/picam01/camera0/'
-    else:
-        logger.warning(f'Unknown hostname {hostname}.')
-        exit(-1)
 
     mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, 'camera_controller')
 
