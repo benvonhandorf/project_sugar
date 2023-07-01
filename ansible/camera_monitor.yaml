@@ -13,26 +13,54 @@
     archive_version: "0.23.6"
     archive_filename: camera_monitor
     service_name: "camera_monitor"
-    username: "camera_stream"
+    username: "{{ camera_user }}"
     group: "{{ username }}"
     target_directory: "mediamtx"
     description: "Camera Stream"
   tasks:
-
-
     # - name: Update os packages
     #   ansible.builtin.apt:
     #     update_cache: yes
     #     upgrade: yes
-    # - name: Create user
-    #   ansible.builtin.user:
-    #     name: "{{ username }}"
-    #     shell: /bin/false
-    #     system: true
-    # - name: Retrieve user information
-    #   ansible.builtin.getent:
-    #     database: passwd
-    #     key: "{{ username }}"
+    - name: Create user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /bin/false
+        system: true
+    - name: Add authorized_keys for admin
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', '../credentials/local_network_rsa.pub') }}"
+    - name: Retrieve user information
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ username }}"
+    - name: Set home_directory
+      ansible.builtin.set_fact:
+        home_directory: "{{ ansible_facts.getent_passwd.camera_stream[4] }}"
+    - name: Ensure .ssh directory
+      ansible.builtin.file:
+        path: "{{ home_directory }}/.ssh"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ group }}"
+        mode: 0700
+    - name: Generate SSH key for fileservers
+      community.crypto.openssh_keypair:
+        path: "{{ home_directory }}/.ssh/fileserver_rsa"
+        comment: "Camera filerserver key"
+        force: true
+        owner: "{{ username }}"
+        group: "{{ group }}"
+        type: ed25519
+        state: present
+    - name: Fetch remote public key
+      ansible.builtin.fetch:
+        src: "/home/{{ username }}/.ssh/fileserver_rsa.pub"
+        dest: "../credentials/{{ inventory_hostname }}_fileserver_rsa.pub"
+        fail_on_missing: yes
+        flat: yes
     # - name: Set working_directory
     #   ansible.builtin.set_fact:
     #     working_directory: "{{ ansible_facts.getent_passwd.camera_stream[4] }}/{{ target_directory }}"

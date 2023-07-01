@@ -1,3 +1,6 @@
+# Credential files
+credentials/**
+
 # Built application files
 *.apk
 *.aar

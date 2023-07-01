@@ -21,9 +21,13 @@ all:
       hosts:
         razorcrest:
           ansible_user: benvh
-        picam04:
         primemover:
           ansible_user: benvh
       vars:
         camera_user: camera_stream
         ansible_user: pi
+    fileserver_hosts:
+      hosts:
+        littlerascal:
+          ansible_user: benvh
+

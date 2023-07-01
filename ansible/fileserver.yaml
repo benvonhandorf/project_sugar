@@ -1,0 +1,51 @@
+- name: Configure fileservers
+  become: true
+  become_user: root
+  hosts: fileserver_hosts
+  vars:
+    username: "camera_files"
+    storage_root: "/mnt/bigvol"
+    storage_dir: "{{ storage_root }}/camera_files"
+  tasks:
+    - name: Find host keys
+      local_action:
+        module: ansible.builtin.find
+        paths: ../credentials/
+        patterns: "*_fileserver_*.pub"
+        recurse: no
+      register: host_keys
+    - name: Create user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        shell: /bin/false
+        system: true
+        createhome: true
+    - name: Add authorized_keys for admin
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', '../credentials/local_network_rsa.pub') }}"
+    - name: Retrieve user information
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ username }}"
+    - name: Set home_directory
+      ansible.builtin.set_fact:
+        home_directory: "{{ ansible_facts.getent_passwd[ username ][4] }}"
+    - name: Create directory for storage
+      ansible.builtin.file:
+        state: directory
+        path: "{{ storage_dir }}"
+        owner: "{{ username }}"
+    - name: Add authorized_keys for hosts
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', item.path) }}"
+      with_items: "{{ host_keys.files }}"
+    - name: Add symlink to storage
+      ansible.builtin.file:
+        state: link
+        src: "{{ storage_dir }}"
+        dest: "{{ home_directory }}/storage"
+        owner: "{{ username }}"

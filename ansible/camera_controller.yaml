@@ -48,6 +48,11 @@
         name: "{{ username }}"
         shell: /bin/false
         system: true
+    - name: Add authorized_keys for admin
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', '../credentials/local_network_rsa.pub') }}"
     - name: Retrieve user information
       ansible.builtin.getent:
         database: passwd
