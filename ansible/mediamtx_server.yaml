@@ -10,7 +10,7 @@
       "x86_64": "amd64"
       "amd64": "amd64"
     archive_arch: "{{ arch_map[ ansible_architecture ] }}"
-    archive_version: "0.23.6"
+    archive_version: "0.23.7"
     archive_filename: mediamtx_v{{ archive_version }}_linux_{{ archive_arch }}
     service_name: "camera_stream"
     username: "camera_stream"
@@ -18,10 +18,10 @@
     target_directory: "mediamtx"
     description: "Camera Stream"
   tasks:
-    - name: Update os packages
-      ansible.builtin.apt:
-        update_cache: yes
-        upgrade: yes
+    # - name: Update os packages
+    #   ansible.builtin.apt:
+    #     update_cache: yes
+    #     upgrade: yes
     - name: Create user
       ansible.builtin.user:
         name: "{{ username }}"
