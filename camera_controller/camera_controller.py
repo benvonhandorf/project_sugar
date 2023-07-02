@@ -5,12 +5,13 @@ import time
 import logging
 import signal
 import os
+import json
+import sys
 
 logger = None
 mqtt_connection = None
 
-enable_service_name = 'camera_stream'
-disable_service_name = 'camera_stream'
+services = ['camera_stream', 'camera_monitor']
 
 def on_control_message(topic, payload):
     logger.info(f'{topic}: {payload}')
@@ -19,12 +20,15 @@ def on_control_message(topic, payload):
         logger.info("Enabling camera")
         publish_status('enable_camera')
 
-        os.system(f'sudo systemctl start {enable_service_name}')
+        for service in services:
+            os.system(f'sudo systemctl start {service}')
     elif payload == "disable_camera":
         logger.info("Disabling camera")
         publish_status('disable_camera')
 
-        os.system(f'sudo systemctl stop {disable_service_name}')
+        for service in services:
+            os.system(f'sudo systemctl stop {service}')
+
     elif payload == "shutdown":
         logger.info("Shutting down")
         publish_status('shutdown')
@@ -57,17 +61,26 @@ if __name__ == "__main__":
 
     logger.addHandler(stream_handler)
 
-    hostname = os.uname()[1]
-    camera_id = 'camera0'
+    config_file = sys.argv[1] or 'config.json'
 
-    root_topic = f'cameras/{hostname}/{camera_id}/'
+    logger.info(f'Loading configuration from {config_file}')
 
-    if hostname == 'primemover':
-        root_topic = f'cameras/picam01/{camera_id}/'
-        disable_service_name = 'camera_monitor'
+    with open(config_file, 'r') as config_file:
+        CONFIG = json.load(config_file)
 
-    client_id = f'{hostname}_{camera_id}_controller'
-    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, client_id)
+    camera_host = CONFIG.get('camera_host') or os.uname()[1]
+    camera_id = CONFIG['camera_id']
+
+    mqtt_host = CONFIG['mqtt_host']
+    mqtt_port = CONFIG['mqtt_port']
+    mqtt_username = CONFIG['mqtt_username']
+    mqtt_password = CONFIG['mqtt_password']
+
+    root_topic = f'cameras/{camera_host}/{camera_id}/'
+
+    client_id = f'{camera_host}_{camera_id}_controller'
+
+    mqtt_configuration = MqttConfiguration(mqtt_host, mqtt_username, mqtt_password, root_topic, client_id)
 
     mqtt_connection = MqttConnection(mqtt_configuration)
 

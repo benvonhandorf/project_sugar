@@ -5,6 +5,9 @@ all:
         razorcrest:
           ansible_user: benvh
           prometheus_arch: arm64
+          systemctl: /bin/systemctl
+          shutdown: /sbin/shutdown
+          reboot: /sbin/reboot
         picam[01:04]:
         picam01:
           camera_tuning_file: ov5647
@@ -20,7 +23,6 @@ all:
     camera_monitors:
       hosts:
         razorcrest:
-          ansible_user: benvh
         primemover:
           ansible_user: benvh
       vars:
@@ -34,4 +36,8 @@ all:
       children:
         camera_hosts:
         camera_monitors:
+  vars:
+    systemctl: /usr/bin/systemctl
+    shutdown: /usr/sbin/shutdown
+    reboot: /usr/sbin/reboot
 
