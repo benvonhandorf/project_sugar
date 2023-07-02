@@ -45,10 +45,13 @@ class FileMover(Process):
         result = self.connection.put(capture_complete['filename'], remote=remote_path)
 
         if result:
-            
-            move_complete = { 'video': capture_complete['video'], 'filename': remote_path}
+            local_path = Path(capture_complete['filename'])
+            full_remote_path = remote_path + local_path.name
+            move_complete = { 'video': capture_complete['video'], 'filename': full_remote_path}
 
             self.move_complete_queue.put(move_complete)
+
+            local_path.unlink()
         else:
             self.logger.error(f'Unable to move file: {result}')
 
