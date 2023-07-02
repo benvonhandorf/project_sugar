@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     logger.addHandler(stream_handler)
 
-    config_file = sys.argv[1] or 'config.json'
+    config_file = sys.argv[1] or '../camera_config.json'
 
     logger.info(f'Loading configuration from {config_file}')
 

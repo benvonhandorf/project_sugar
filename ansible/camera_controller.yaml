@@ -79,8 +79,8 @@
       ansible.builtin.copy:
         force: false
         remote_src: true
-        src: "{{ working_directory }}/config_default.json"
-        dest: "{{ working_directory }}/config.json"
+        src: "{{ working_directory }}/camera_config_default.json"
+        dest: "{{ home_directory }}/camera_config.json"
         owner: "{{ username }}"
         group: "{{ group }}"
     - name: Install sudoers file

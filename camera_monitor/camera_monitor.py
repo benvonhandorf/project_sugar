@@ -13,6 +13,8 @@ from controller import Controller
 from mqtt_monitor import MqttConfiguration, MqttMonitor
 import common
 import os
+import sys
+import json
 
 if __name__ == '__main__':
     logger = common.get_logger()
@@ -20,6 +22,23 @@ if __name__ == '__main__':
     logger.info('Starting')
 
     hostname = os.uname()[1]
+
+    config_file = sys.argv[1] or '../camera_config.json'
+
+    logger.info(f'Loading configuration from {config_file}')
+
+    with open(config_file, 'r') as config_file:
+        CONFIG = json.load(config_file)
+
+    camera_host = CONFIG.get('camera_host') or os.uname()[1]
+    camera_id = CONFIG['camera_id']
+
+    mqtt_host = CONFIG['mqtt_host']
+    mqtt_port = CONFIG['mqtt_port']
+    mqtt_username = CONFIG['mqtt_username']
+    mqtt_password = CONFIG['mqtt_password']
+
+    root_topic = f'cameras/{camera_host}/{camera_id}/'
 
     camera_id = 'camera0'
 
