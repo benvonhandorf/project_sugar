@@ -58,13 +58,16 @@ if __name__ == "__main__":
     logger.addHandler(stream_handler)
 
     hostname = os.uname()[1]
+    camera_id = 'camera0'
 
-    root_topic = f'/cameras/{hostname}/camera0/'
+    root_topic = f'cameras/{hostname}/{camera_id}/'
 
-    if  hostname == 'primemover':
-        root_topic = '/cameras/picam01/camera0/'
+    if hostname == 'primemover':
+        root_topic = f'cameras/picam01/{camera_id}/'
+        disable_service_name = 'camera_monitor'
 
-    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, 'camera_controller')
+    client_id = f'{hostname}_{camera_id}_controller'
+    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, client_id)
 
     mqtt_connection = MqttConnection(mqtt_configuration)
 

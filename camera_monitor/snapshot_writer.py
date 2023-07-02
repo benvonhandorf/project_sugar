@@ -27,7 +27,11 @@ class SnapshotWriter(Process):
 
         cv2.imwrite(filename, frame)
 
-        self.capture_complete_queue.put({'video': False, 'filename': filename})
+        capture_complete = {'video': False, 'filename': filename}
+
+        self.capture_complete_queue.put(capture_complete)
+
+        self.logger.info(f'Capture complete: {capture_complete}')
 
     def process_command(self, command):
         if command is not None:

@@ -1,8 +1,7 @@
 - name: Install Camera Controller
   become: true
   become_user: root
-  # hosts: camera_hosts
-  hosts: picam04
+  hosts: razorcrest
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -22,27 +21,21 @@
       local_action: 
         module: ansible.builtin.archive
         dest: "build/{{ archive_filename }}.tar.gz"
-        path: ../camera_controller/*.py
-    - name: Update os packages
-      ansible.builtin.apt:
-        update_cache: yes
-        upgrade: yes
-    - name: Ensure Python 3 is installed
-      ansible.builtin.apt:
-        name: python3
-        state: present
-    - name: Ensure Pip 3 is installed
-      ansible.builtin.apt:
-        name: python3-pip
-        state: present
-    - name: Ensure RPi GPIO is installed
-      ansible.builtin.apt:
-        name: python3-rpi.gpio
-        state: present
-      when: ansible_architecture == "armv7l" or ansible_architecture == "armv6l"
-    - name: Install Paho MQTT
-      ansible.builtin.pip:
-        name: paho-mqtt
+        path: 
+        - ../camera_controller/*.py
+        - ../camera_controller/requirements.txt
+    # - name: Update os packages
+    #   ansible.builtin.apt:
+    #     update_cache: yes
+    #     upgrade: yes
+    # - name: Ensure Python 3 is installed
+    #   ansible.builtin.apt:
+    #     name: python3
+    #     state: present
+    # - name: Ensure Pip 3 is installed
+    #   ansible.builtin.apt:
+    #     name: python3-pip
+    #     state: present
     - name: Create user
       ansible.builtin.user:
         name: "{{ username }}"
@@ -69,14 +62,6 @@
         path: "{{ working_directory }}"
         owner: "{{ username }}"
         group: "{{ group }}"
-      register: tempdir
-    # - name: Copy archive to destination
-    #   ansible.builtin.copy:
-    #     src: "build/{{ archive_filename }}.tar.gz"
-    #     dest: "{{ working_directory }}/"
-    #     owner: "{{ username }}"
-    #     group: "{{ group }}"
-    #     mode: 0755
     - name: Unarchive 
       ansible.builtin.unarchive:
         src: "build/{{ archive_filename }}.tar.gz"
@@ -84,13 +69,10 @@
         owner: "{{ username }}"
         group: "{{ group }}"
         mode: 0644
-    #   ansible.builtin.copy:
-    #     src: "{{ tempdir.path }}/mediamtx"
-    #     dest: "{{ working_directory }}/"
-    #     remote_src: yes
-    #     owner: "{{ username }}"
-    #     group: "{{ group }}"
-    #     mode: 0755
+    - name: Ensure requirements.txt are installed
+      ansible.builtin.pip:
+        state: present
+        requirements: "{{ working_directory }}/requirements.txt"
     - name: Install sudoers file
       ansible.builtin.template:
         src: templates/camera_controller.sudoers.j2

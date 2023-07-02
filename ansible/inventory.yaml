@@ -30,4 +30,8 @@ all:
       hosts:
         littlerascal:
           ansible_user: benvh
+    camera_controllers:
+      children:
+        camera_hosts:
+        camera_monitors:
 

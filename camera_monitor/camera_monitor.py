@@ -7,7 +7,7 @@ from stream_configuration import StreamConfiguration
 from stream_reader import StreamReader
 from stream_writer import StreamWriter
 from snapshot_writer import SnapshotWriter
-from file_mover import FileMover
+from file_mover import FileMover, FileMoverConfig
 from multiprocessing import Queue, log_to_stderr
 from controller import Controller
 from mqtt_monitor import MqttConfiguration, MqttMonitor
@@ -21,16 +21,23 @@ if __name__ == '__main__':
 
     hostname = os.uname()[1]
 
+    camera_id = 'camera0'
+
     if hostname == 'razorcrest':
-        stream_configuration = StreamConfiguration('rtsp://razorcrest:8554/camera0', 'data', 'razorcrest', 30, 1280, 720)
-        topic = '/cameras/razorcrest/camera0/'
-    else:
+        stream_configuration = StreamConfiguration(f'rtsp://{hostname}:8554/{camera_id}', 'data', 'razorcrest', 30, 1280, 720)
+    else :
+        stream_configuration = StreamConfiguration(f'rtsp://{hostname}:8554/{camera_id}', 'data', 'razorcrest', 30, 1280, 720)
         stream_configuration = StreamConfiguration('rtsp://picam01:8554/camera0', 'data', 'picam01', 30, 800, 600)
-        topic = '/cameras/picam01/camera0/'
+        
+    client_id = f'{hostname}_{camera_id}'
+    topic = f'cameras/{hostname}/{camera_id}/'
+    feeder_id = 'feeder01'
 
     if not os.path.exists(stream_configuration.directory):
         logger.info(f'Creating directory {stream_configuration.directory}')
         os.makedirs(stream_configuration.directory)
+
+    file_mover_config = FileMoverConfig('littlerascal', 'camera_files', f'storage/{feeder_id}/')
 
     frame_buffer_seconds = 5
     frame_buffer_count = stream_configuration.framerate * frame_buffer_seconds
@@ -58,14 +65,14 @@ if __name__ == '__main__':
     snapshot_writer = SnapshotWriter(snapshot_queue, capture_complete_queue, frame_buffer, stream_configuration)
     snapshot_writer.start()
 
-    file_mover = FileMover(capture_complete_queue, file_moved_queue)
+    file_mover = FileMover(file_mover_config, capture_complete_queue, file_moved_queue)
+    file_mover.start()
 
     controller = Controller(control_queue, snapshot_queue)
 
-    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', topic)
+    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', topic, client_id)
 
     mqtt_monitor = MqttMonitor(mqtt_configuration, controller, file_moved_queue)
-    # mqtt_monitor.daemon = True
     mqtt_monitor.start()
 
     while True:
