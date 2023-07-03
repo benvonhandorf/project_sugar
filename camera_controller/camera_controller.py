@@ -63,12 +63,14 @@ if __name__ == "__main__":
 
     config_file = sys.argv[1] or '../camera_config.json'
 
+    hostname = os.uname()[1]
+
     logger.info(f'Loading configuration from {config_file}')
 
     with open(config_file, 'r') as config_file:
         CONFIG = json.load(config_file)
 
-    camera_host = CONFIG.get('camera_host') or os.uname()[1]
+    camera_host = CONFIG.get('camera_host') or hostname
     camera_id = CONFIG['camera_id']
 
     mqtt_host = CONFIG['mqtt_host']
@@ -79,6 +81,9 @@ if __name__ == "__main__":
     root_topic = f'cameras/{camera_host}/{camera_id}/'
 
     client_id = f'{camera_host}_{camera_id}_controller'
+
+    if hostname != camera_host:
+        client_id += f'_{hostname}'
 
     mqtt_configuration = MqttConfiguration(mqtt_host, mqtt_username, mqtt_password, root_topic, client_id)
 

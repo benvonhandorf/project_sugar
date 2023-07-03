@@ -25,6 +25,7 @@ all:
         razorcrest:
         primemover:
           ansible_user: benvh
+        picam04:
       vars:
         camera_user: camera_stream
         ansible_user: pi

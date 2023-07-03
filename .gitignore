@@ -1,5 +1,6 @@
 # Credential files
 credentials/**
+tmp/**
 
 # Built application files
 *.apk
