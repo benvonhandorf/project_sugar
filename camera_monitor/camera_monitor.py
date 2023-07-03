@@ -1,6 +1,3 @@
-import cv2
-import argparse
-import logging
 from time import perf_counter
 import frame_buffer
 from stream_configuration import StreamConfiguration
@@ -15,6 +12,7 @@ import common
 import os
 import sys
 import json
+import signal
 
 if __name__ == '__main__':
     logger = common.get_logger()
@@ -37,19 +35,14 @@ if __name__ == '__main__':
     mqtt_port = CONFIG['mqtt_port']
     mqtt_username = CONFIG['mqtt_username']
     mqtt_password = CONFIG['mqtt_password']
+    feeder = CONFIG.get('feeder_id') or 'feeder01'
 
     root_topic = f'cameras/{camera_host}/{camera_id}/'
-
     camera_id = 'camera0'
 
-    if hostname == 'razorcrest':
-        stream_configuration = StreamConfiguration(f'rtsp://{hostname}:8554/{camera_id}', 'data', 'razorcrest', 30, 1280, 720)
-    else :
-        stream_configuration = StreamConfiguration(f'rtsp://{hostname}:8554/{camera_id}', 'data', 'razorcrest', 30, 1280, 720)
-        stream_configuration = StreamConfiguration('rtsp://picam01:8554/camera0', 'data', 'picam01', 30, 800, 600)
+    stream_configuration = StreamConfiguration(f'rtsp://{camera_host}:8554/{camera_id}', 'data', camera_host, CONFIG['camera_fps'], CONFIG['camera_width'], CONFIG['camera_height'])
         
-    client_id = f'{hostname}_{camera_id}'
-    topic = f'cameras/{hostname}/{camera_id}/'
+    client_id = f'{hostname}_{camera_id}_monitor'
     feeder_id = 'feeder01'
 
     if not os.path.exists(stream_configuration.directory):
@@ -74,11 +67,9 @@ if __name__ == '__main__':
     file_moved_queue = Queue()
 
     stream_writer = StreamWriter(control_queue, capture_complete_queue, frame_buffer, stream_configuration)
-    # stream_writer.daemon = True
     stream_writer.start()
 
     stream_reader = StreamReader(stream_configuration, frame_buffer)
-    # stream_reader.daemon = True
     stream_reader.start()
 
     snapshot_writer = SnapshotWriter(snapshot_queue, capture_complete_queue, frame_buffer, stream_configuration)
@@ -89,10 +80,20 @@ if __name__ == '__main__':
 
     controller = Controller(control_queue, snapshot_queue)
 
-    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', topic, client_id)
+    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, client_id)
 
     mqtt_monitor = MqttMonitor(mqtt_configuration, controller, file_moved_queue)
     mqtt_monitor.start()
 
-    while True:
-        pass
+    def signal_handler(sig, frame):
+        stream_writer.close()
+        snapshot_writer.close()
+        file_mover.close()
+        mqtt_monitor.close()
+        stream_reader.close()
+
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.pause()
+

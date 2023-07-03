@@ -1,7 +1,7 @@
 - name: Install Camera Controller
   become: true
   become_user: root
-  hosts: razorcrest
+  hosts: camera_controllers
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -16,7 +16,6 @@
     group: "{{ username }}"
     target_directory: "camera_controller"
     description: "Camera Controller"
-    config: config.json
   tasks:
     - name: Build deployment archive - Local
       local_action: 
@@ -25,7 +24,7 @@
         path: 
         - ../camera_controller/*.py
         - ../camera_controller/requirements.txt
-        - ../camera_controller/config_default.json
+        - ../camera_controller/camera_config_default.json
     # - name: Update os packages
     #   ansible.builtin.apt:
     #     update_cache: yes
@@ -52,9 +51,15 @@
       ansible.builtin.getent:
         database: passwd
         key: "{{ username }}"
+    - name: Set home_directory
+      ansible.builtin.set_fact:
+        home_directory: "{{ ansible_facts.getent_passwd.camera_stream[4] }}"
     - name: Set working_directory
       ansible.builtin.set_fact:
-        working_directory: "{{ ansible_facts.getent_passwd.camera_stream[4] }}/{{ target_directory }}"
+        working_directory: "{{ home_directory }}/{{ target_directory }}"
+    - name: Set config
+      ansible.builtin.set_fact:
+        config: "{{ home_directory }}/camera_config.json"
     - name: Set exec_start
       ansible.builtin.set_fact:
         exec_start: "/usr/bin/python3 {{ working_directory }}/camera_controller.py {{ config }}"    
@@ -109,6 +114,6 @@
       ansible.builtin.systemd:
         daemon_reload: yes
         enabled: yes
-        state: started
+        state: restarted
         name: "{{ service_name }}.service"
 

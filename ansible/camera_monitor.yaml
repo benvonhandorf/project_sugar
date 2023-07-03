@@ -50,9 +50,12 @@
     - name: Set working_directory
       ansible.builtin.set_fact:
         working_directory: "{{ home_directory }}/{{ target_directory }}"
+    - name: Set config
+      ansible.builtin.set_fact:
+        config: "{{ home_directory }}/camera_config.json"
     - name: Set exec_start
       ansible.builtin.set_fact:
-        exec_start: "/usr/bin/python3 {{ working_directory }}/camera_monitor.py"    
+        exec_start: "/usr/bin/python3 {{ working_directory }}/camera_monitor.py {{ config }}"
     - name: Ensure .ssh directory
       ansible.builtin.file:
         path: "{{ home_directory }}/.ssh"
