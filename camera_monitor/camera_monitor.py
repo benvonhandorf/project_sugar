@@ -1,4 +1,4 @@
-from time import perf_counter
+import time
 import frame_buffer
 from stream_configuration import StreamConfiguration
 from stream_reader import StreamReader
@@ -37,13 +37,23 @@ if __name__ == '__main__':
     mqtt_password = CONFIG['mqtt_password']
     feeder = CONFIG.get('feeder_id') or 'feeder01'
 
+    monitor_delay_startup_sec = CONFIG.get('monitor_delay_startup_sec') or 0
+
+    if monitor_delay_startup_sec:
+        logger.info(f'Sleeping for {monitor_delay_startup_sec} seconds')
+
+        time.sleep(monitor_delay_startup_sec)
+
     root_topic = f'cameras/{camera_host}/{camera_id}/'
     camera_id = 'camera0'
 
     stream_configuration = StreamConfiguration(f'rtsp://{camera_host}:8554/{camera_id}', 'data', camera_host, CONFIG['camera_fps'], CONFIG['camera_width'], CONFIG['camera_height'])
         
-    client_id = f'{hostname}_{camera_id}_monitor'
+    client_id = f'{camera_host}_{camera_id}_monitor'
     feeder_id = 'feeder01'
+
+    if hostname != camera_host:
+        client_id += f'_{hostname}'
 
     if not os.path.exists(stream_configuration.directory):
         logger.info(f'Creating directory {stream_configuration.directory}')
