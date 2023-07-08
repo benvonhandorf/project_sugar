@@ -275,7 +275,7 @@ String msg = "{\"duration\":" + String(durationMs) + ",\"data\":[";
         dtostrf(readings[i], 5, 3, fmt);
         msg += fmt;
 
-        if (i < rawReadingsCount - 1) {
+        if (i < count - 1) {
             msg += ", ";
         }
     }
@@ -295,7 +295,7 @@ bool writeBatchInt8(const char *topic, int8_t *readings, uint16_t count,
         itoa(readings[i], fmt, 10);
         msg += fmt;
 
-        if (i < rawReadingsCount - 1) {
+        if (i < count - 1) {
             msg += ", ";
         }
     }
