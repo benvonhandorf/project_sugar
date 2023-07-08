@@ -6,46 +6,51 @@
 
 #define WATCHDOG_MS 30000
 
-#if FM==1
+#if FM == 1
 
 float calibrationValue = -970.83;
 
 const char *HOSTNAME = "feedermonitor01";
-const char *WILL_TOPIC = "/sensors/feeders/1/status";
-const char *RESET_TOPIC = "/sensors/feeders/3/reset";
-const char *RAW_TOPIC = "/sensors/feeders/1/raw";
-const char *AVERAGE_TOPIC = "/sensors/feeders/1/average";
-const char *TRIGGER_TOPIC = "/sensors/feeders/1/trigger";
-const char *MESSAGE_TOPIC = "/sensors/feeders/1/message";
-const char *RSSI_TOPIC = "/sensors/feeders/1/rssi";
+const char *WILL_TOPIC = "sensors/feeders/1/status";
+const char *RESET_TOPIC = "sensors/feeders/1/reset";
+const char *RAW_TOPIC = "sensors/feeders/1/raw";
+const char *BATCH_RAW_TOPIC = "sensors/feeders/1/raw_batch";
+const char *AVERAGE_TOPIC = "sensors/feeders/1/average";
+const char *TRIGGER_TOPIC = "sensors/feeders/1/trigger";
+const char *MESSAGE_TOPIC = "sensors/feeders/1/message";
+const char *RSSI_TOPIC = "sensors/feeders/1/rssi_batch";
 
-#elif FM==2
+#elif FM == 2
 
 float calibrationValue = 986.94;
 
 const char *HOSTNAME = "feedermonitor02";
-const char *WILL_TOPIC = "/sensors/feeders/2/status";
-const char *RESET_TOPIC = "/sensors/feeders/2/reset";
-const char *RAW_TOPIC = "/sensors/feeders/2/raw";
-const char *AVERAGE_TOPIC = "/sensors/feeders/2/average";
-const char *TRIGGER_TOPIC = "/sensors/feeders/2/trigger";
-const char *MESSAGE_TOPIC = "/sensors/feeders/2/message";
-const char *RSSI_TOPIC = "/sensors/feeders/2/rssi";
+const char *WILL_TOPIC = "sensors/feeders/2/status";
+const char *RESET_TOPIC = "sensors/feeders/2/reset";
+const char *RAW_TOPIC = "sensors/feeders/2/raw";
+const char *BATCH_RAW_TOPIC = "sensors/feeders/2/raw_batch";
+const char *AVERAGE_TOPIC = "sensors/feeders/2/average";
+const char *TRIGGER_TOPIC = "sensors/feeders/2/trigger";
+const char *MESSAGE_TOPIC = "sensors/feeders/2/message";
+const char *RSSI_TOPIC = "sensors/feeders/2/rssi_batch";
 
-#elif FM==3
+#elif FM == 3
 
 float calibrationValue = 906.79;
 
 const char *HOSTNAME = "feedermonitor03";
-const char *WILL_TOPIC = "/sensors/feeders/3/status";
-const char *RESET_TOPIC = "/sensors/feeders/3/reset";
-const char *RAW_TOPIC = "/sensors/feeders/3/raw";
-const char *AVERAGE_TOPIC = "/sensors/feeders/3/average";
-const char *TRIGGER_TOPIC = "/sensors/feeders/3/trigger";
-const char *MESSAGE_TOPIC = "/sensors/feeders/3/message";
-const char *RSSI_TOPIC = "/sensors/feeders/3/rssi";
+const char *WILL_TOPIC = "sensors/feeders/3/status";
+const char *RESET_TOPIC = "sensors/feeders/3/reset";
+const char *RAW_TOPIC = "sensors/feeders/3/raw";
+const char *BATCH_RAW_TOPIC = "sensors/feeders/3/raw_batch";
+const char *AVERAGE_TOPIC = "sensors/feeders/3/average";
+const char *TRIGGER_TOPIC = "/ensors/feeders/3/trigger";
+const char *MESSAGE_TOPIC = "sensors/feeders/3/message";
+const char *RSSI_TOPIC = "sensors/feeders/3/rssi_batch";
 
 #endif
+
+#define DEBUG_PUBLISH 1
 
 const char *mqtt_server = "littlerascal";
 const char *MQTT_USER = "sensor_writer";
@@ -62,17 +67,23 @@ PubSubClient client(espClient);
 
 void println(const char *s) {
     Serial.println(s);
-    client.publish(MESSAGE_TOPIC, s, true);
+#ifdef DEBUG_PUBLISH
+    client.publish(MESSAGE_TOPIC, s);
+#endif
 }
 
 void println(const String &s) {
     Serial.println(s);
-    client.publish(MESSAGE_TOPIC, s.c_str(), true);
+#ifdef DEBUG_PUBLISH
+    client.publish(MESSAGE_TOPIC, s.c_str());
+#endif
 }
 
 void print(const char *s) {
     Serial.print(s);
-    client.publish(MESSAGE_TOPIC, s, true);
+#ifdef DEBUG_PUBLISH
+    client.publish(MESSAGE_TOPIC, s);
+#endif
 }
 
 void halt() {
@@ -103,24 +114,39 @@ void initWiFi_block() {
     if (!MDNS.begin(HOSTNAME)) {
         Serial.println("Error setting up MDNS responder!");
     }
+
+    WiFi.setAutoReconnect(true);
+}
+
+void MQTT_reconnect() {
+    while (!client.connected()) {
+        if(!WiFi.isConnected()) {
+            println("Wifi Disconnected.  Attempting to reconnect.");
+
+            initWiFi_block();
+            delay(5000);
+        }
+
+        println("Attempting MQTT connection...");
+
+        if (client.connect(HOSTNAME, MQTT_USER, MQTT_PASSWORD, WILL_TOPIC,
+                           (uint8_t)1, true, "offline")) {
+            client.publish(WILL_TOPIC, "online", true);
+            client.publish(RESET_TOPIC, String(reset_reason).c_str(), true);
+        } else {
+            print("MQTT Attempt Failed, rc=");
+            println(String(client.state()));
+
+            delay(5000);
+        }
+    }
 }
 
 void initMQTT_block() {
     client.setServer(mqtt_server, 1883);
-    client.connect(HOSTNAME, MQTT_USER, MQTT_PASSWORD, WILL_TOPIC,
-                   (uint8_t)1, true, "offline");
+    client.setBufferSize(2048);
 
-    if (client.state() != MQTT_CONNECTED) {
-        print("MQTT Failed: ");
-        Serial.println(client.state());
-
-        halt();
-    }
-
-    Serial.println("MQTT Connected.");
-
-    client.publish(WILL_TOPIC, "online", true);
-    client.publish(RESET_TOPIC, String(reset_reason).c_str(), true);
+    MQTT_reconnect();
 }
 
 void initOTA_block() {
@@ -161,7 +187,7 @@ void initOTA_block() {
     ArduinoOTA.begin();
 }
 
-const uint32_t AVERAGING_WINDOW_LENGTH = 10;
+const uint32_t AVERAGING_WINDOW_LENGTH = 5;
 uint16_t averagedReadings = 0;
 uint16_t readingCount = 0;
 float calculatedAverage = 0.0f;
@@ -175,23 +201,36 @@ const float TRIGGER_RESET_INTERVAL = 100;
 bool initialized = false;
 bool triggered = false;
 
+const int RAW_BATCH_SIZE = 256;
+uint32_t rawFirstSample = 0;
+float rawReadings[2048];
+uint16_t rawReadingsCount = 0;
+
+const uint32_t RSSI_BATCH_SIZE = 256;
+uint32_t rssiFirstSample = 0;
+int8_t rssiReadings[2048];
+uint16_t rssiReadingsCount = 0;
+
+uint32_t LOOP_DELAY_MS = 0;
+
+
+
+
 float readDataWithAveraging() {
     float value = 0.0f;
     averagedReadings = 0;
 
-    while(averagedReadings < AVERAGING_WINDOW_LENGTH)  {
+    while (averagedReadings < AVERAGING_WINDOW_LENGTH) {
         if (LoadCell.update()) {
             value += LoadCell.getData();
 
             averagedReadings++;
 
             ArduinoOTA.handle();
-
-            delay(10);
         }
     }
 
-    value /= (float) AVERAGING_WINDOW_LENGTH;
+    value /= (float)AVERAGING_WINDOW_LENGTH;
 
     return value;
 }
@@ -204,7 +243,7 @@ void readStartupData() {
 
             ArduinoOTA.handle();
 
-            delay(10);
+            delay(5);
         }
 
         calculatedAverage /= (float)AVERAGING_WINDOW_LENGTH;
@@ -221,10 +260,50 @@ void readStartupData() {
 void publishTrigger(bool triggered, float delta) {
     dtostrf(delta, 5, 3, fmt);
 
-    String msg = "{ \"value\": " + String(triggered) + ", \"delta\": " +
-                 String(delta) + "}";
+    String msg = "{ \"value\": " + String(triggered) +
+                 ", \"delta\": " + String(delta) + "}";
 
     client.publish(TRIGGER_TOPIC, msg.c_str());
+}
+
+bool writeBatchFloat(const char *topic, float *readings, uint16_t count,
+                     uint32_t durationMs) {
+String msg = "{\"duration\":" + String(durationMs) + ",\"data\":[";
+
+
+    for (uint16_t i = 0; i < count; i++) {
+        dtostrf(readings[i], 5, 3, fmt);
+        msg += fmt;
+
+        if (i < rawReadingsCount - 1) {
+            msg += ", ";
+        }
+    }
+    msg += "]}";
+
+    bool result = client.publish(topic, msg.c_str());
+
+    return result;
+}
+
+bool writeBatchInt8(const char *topic, int8_t *readings, uint16_t count,
+                    uint32_t durationMs) {
+
+    String msg = "{\"duration\":" + String(durationMs) + ",\"data\":[";
+
+    for (uint16_t i = 0; i < count; i++) {
+        itoa(readings[i], fmt, 10);
+        msg += fmt;
+
+        if (i < rawReadingsCount - 1) {
+            msg += ", ";
+        }
+    }
+    msg += "]}";
+
+    println(msg);
+
+    return client.publish(topic, msg.c_str());
 }
 
 void setup() {
@@ -266,19 +345,37 @@ void setup() {
 }
 
 void loop() {
+    if (!client.connected()) {
+        MQTT_reconnect();
+    }
     bool success = false;
     float val = readDataWithAveraging();
     readingCount++;
 
     float delta = abs(calculatedAverage - val);
 
-    dtostrf(val, 5, 3, fmt);
-    success = client.publish(RAW_TOPIC, fmt) || success;
+    rawReadings[rawReadingsCount++] = val;
 
-    println(fmt);
+    if(rawFirstSample == 0) {
+        rawFirstSample = millis();
+    }
 
-    if (delta > EXPECTED_TRIGGER_MIN &&
-        delta < EXPECTED_TRIGGER_MAX &&
+    if (rawReadingsCount > RAW_BATCH_SIZE) {
+        println("Writing batch to raw topic");
+
+        uint32_t duration = millis() - rawFirstSample;
+
+        success =
+            writeBatchFloat(BATCH_RAW_TOPIC, rawReadings, rawReadingsCount, duration);
+
+        if (success || rawReadingsCount > 1024) {
+            println("Raw batch complete.");
+            rawReadingsCount = 0;
+            rawFirstSample = 0;
+        }
+    }
+
+    if (delta > EXPECTED_TRIGGER_MIN && delta < EXPECTED_TRIGGER_MAX &&
         triggeredReadings < TRIGGER_RESET_INTERVAL && initialized) {
         // Triggered
         if (!triggered) {
@@ -290,9 +387,9 @@ void loop() {
         }
 
         triggeredReadings++;
-    } else if(delta > TRIGGER_HYSTERISIS) {
-        //We haven't dropped to within 1g of our starting weight
-        //Assume the hummingbird is still present and this is noise in the data
+    } else if (delta > TRIGGER_HYSTERISIS) {
+        // We haven't dropped to within 1g of our starting weight
+        // Assume the hummingbird is still present and this is noise in the data
         triggeredReadings++;
     } else {
         if (triggered) {
@@ -304,7 +401,7 @@ void loop() {
             print("Trigger Cleared.");
             println(fmt);
         }
-        
+
         calculatedAverage = (calculatedAverage * 0.9) + (val * 0.1);
 
         if (readingCount % 20 == 0) {
@@ -319,23 +416,28 @@ void loop() {
 
     int8_t rssi = WiFi.RSSI();
 
-    itoa(rssi, fmt, 10);
+    rssiReadings[rssiReadingsCount++] = rssi;
 
-    if(WiFi.isConnected()) {
-        success = client.publish(RSSI_TOPIC, fmt) || success;
-
-        if(success ) {
-            ESP.wdtFeed();
-        } else {
-            println("No successful transmissions.");
-            ESP.restart();
-        }
-    }  else {
-        println("WiFi not connected.");
-        ESP.restart();
+    if(rssiFirstSample == 0) {
+        rssiFirstSample = millis();
     }
-    
+
+    if (rssiReadingsCount > RSSI_BATCH_SIZE) {
+        println("Writing batch to rssi topic");
+
+        uint32_t duration = millis() - rssiFirstSample;
+
+        success =
+            writeBatchInt8(RSSI_TOPIC, rssiReadings, rssiReadingsCount, duration);
+
+        if (success || rssiReadingsCount > 1024) {
+            println("RSSI batch complete.");
+            rssiReadingsCount = 0;
+            rssiFirstSample = 0;
+        }
+    }
+
     ArduinoOTA.handle();
 
-    delay(100);
+    delay(LOOP_DELAY_MS);
 }

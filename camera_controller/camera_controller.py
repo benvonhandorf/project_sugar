@@ -85,6 +85,8 @@ if __name__ == "__main__":
     if hostname != camera_host:
         client_id += f'_{hostname}'
 
+        services = [f'camera_monitor_{camera_host}']
+
     mqtt_configuration = MqttConfiguration(mqtt_host, mqtt_username, mqtt_password, root_topic, client_id)
 
     mqtt_connection = MqttConnection(mqtt_configuration)

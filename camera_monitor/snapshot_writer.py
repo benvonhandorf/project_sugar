@@ -17,21 +17,24 @@ class SnapshotWriter(Process):
         self.stream_configuration = stream_configuration
 
     def perform_snapshot(self, timestamp):
-        timestamp_string = datetime.fromtimestamp(timestamp/1000).isoformat()
+        try:
+            timestamp_string = datetime.fromtimestamp(timestamp/1000).isoformat()
 
-        filename = f'{self.stream_configuration.directory}/{self.stream_configuration.base_filename}-{timestamp_string}.png'
+            filename = f'{self.stream_configuration.directory}/{self.stream_configuration.base_filename}-{timestamp_string}.png'
 
-        self.logger.info(f'Writing to {filename}')
+            self.logger.info(f'Writing to {filename}')
 
-        frame = self.frame_buffer.snapshot()
+            frame = self.frame_buffer.snapshot()
 
-        cv2.imwrite(filename, frame)
+            cv2.imwrite(filename, frame)
 
-        capture_complete = {'video': False, 'filename': filename}
+            capture_complete = {'video': False, 'filename': filename}
 
-        self.capture_complete_queue.put(capture_complete)
+            self.capture_complete_queue.put(capture_complete)
 
-        self.logger.info(f'Capture complete: {capture_complete}')
+            self.logger.info(f'Capture complete: {capture_complete}')
+        except Exception as e:
+            self.logger.error(f'Error writing snapshot: {e}')
 
     def process_command(self, command):
         if command is not None:
@@ -48,11 +51,14 @@ class SnapshotWriter(Process):
         self.logger.info(f'Running')
 
         while True:
-            command = self.queue.get()
+            try:
+                command = self.queue.get()
 
-            self.logger.info(f'Processing command: {command}')
+                self.logger.info(f'Processing command: {command}')
 
-            self.process_command(command)
+                self.process_command(command)
+            except Exception as e:
+                self.logger.error(f'Error: {e}')
 
                     
 
