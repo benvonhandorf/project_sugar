@@ -50,7 +50,7 @@ const char *RSSI_TOPIC = "sensors/feeders/3/rssi_batch";
 
 #endif
 
-#define DEBUG_PUBLISH 1
+// #define DEBUG_PUBLISH 1
 
 const char *mqtt_server = "littlerascal";
 const char *MQTT_USER = "sensor_writer";
@@ -301,7 +301,7 @@ bool writeBatchInt8(const char *topic, int8_t *readings, uint16_t count,
     }
     msg += "]}";
 
-    println(msg);
+    // println(msg);
 
     return client.publish(topic, msg.c_str());
 }
@@ -372,6 +372,9 @@ void loop() {
             println("Raw batch complete.");
             rawReadingsCount = 0;
             rawFirstSample = 0;
+        } else {
+            println("Raw batch failed.");
+            println(String(client.state()));
         }
     }
 
