@@ -74,25 +74,25 @@ if __name__ == '__main__':
     control_queue = Queue()
     snapshot_queue = Queue()
     capture_complete_queue = Queue()
-    file_moved_queue = Queue()
+    outgoing_queue = Queue()
 
     stream_writer = StreamWriter(control_queue, capture_complete_queue, frame_buffer, stream_configuration)
     stream_writer.start()
 
-    stream_reader = StreamReader(stream_configuration, frame_buffer)
+    stream_reader = StreamReader(stream_configuration, frame_buffer, outgoing_queue)
     stream_reader.start()
 
     snapshot_writer = SnapshotWriter(snapshot_queue, capture_complete_queue, frame_buffer, stream_configuration)
     snapshot_writer.start()
 
-    file_mover = FileMover(file_mover_config, capture_complete_queue, file_moved_queue)
+    file_mover = FileMover(file_mover_config, capture_complete_queue, outgoing_queue)
     file_mover.start()
 
     controller = Controller(control_queue, snapshot_queue)
 
     mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, client_id)
 
-    mqtt_monitor = MqttMonitor(mqtt_configuration, controller, file_moved_queue)
+    mqtt_monitor = MqttMonitor(mqtt_configuration, controller, outgoing_queue)
     mqtt_monitor.start()
 
     def signal_handler(sig, frame):

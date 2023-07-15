@@ -21,13 +21,41 @@ def on_control_message(topic, payload):
         publish_status('enable_camera')
 
         for service in services:
-            os.system(f'sudo systemctl start {service}')
+            try:
+                os.system(f'sudo systemctl start {service}')
+            except:
+                pass
     elif payload == "disable_camera":
         logger.info("Disabling camera")
         publish_status('disable_camera')
 
         for service in services:
-            os.system(f'sudo systemctl stop {service}')
+            try:
+                os.system(f'sudo systemctl stop {service}')
+            except:
+                pass
+
+    elif payload == "restart_camera":
+        logger.info("Restart camera")
+        logger.info("Disabling camera")
+        publish_status('disable_camera')
+
+        for service in services:
+            try:
+                os.system(f'sudo systemctl stop {service}')
+            except:
+                pass
+
+        time.sleep(5)
+
+        logger.info("Enabling camera")
+        publish_status('enable_camera')
+
+        for service in services:
+            try:
+                os.system(f'sudo systemctl start {service}')
+            except:
+                pass
 
     elif payload == "shutdown":
         logger.info("Shutting down")

@@ -1,8 +1,7 @@
 - name: Install Camera Monitors
   become: true
   become_user: root
-  # hosts: camera_monitors
-  hosts: primemover
+  hosts: camera_monitors
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -31,6 +30,7 @@
         path: 
         - ../camera_monitor/*.py
         - ../camera_monitor/requirements.txt
+      run_once: true
     - name: Create user
       ansible.builtin.user:
         name: "{{ username }}"
@@ -93,20 +93,25 @@
         owner: "{{ username }}"
         group: "{{ group }}"
         mode: 0644
-    # - name: Ensure requirements.txt are installed
-    #   ansible.builtin.pip:
-    #     state: present
-    #     requirements: "{{ working_directory }}/requirements.txt"
-    # - name: Install unit file to systemd
-    #   ansible.builtin.template:
-    #     src: templates/generic.service.j2
-    #     dest: /etc/systemd/system/{{ service_name }}.service
-    #     owner: root
-    #     group: root
-    #     mode: 0600
-    # - name: configure systemd to use service
-    #   ansible.builtin.systemd:
-    #     daemon_reload: yes
-    #     enabled: yes
-    #     state: restarted
-    #     name: "{{ service_name }}.service"
+    - name: Ensure requirements.txt are installed
+      ansible.builtin.pip:
+        state: present
+        requirements: "{{ working_directory }}/requirements.txt"
+    - name: Install unit file to systemd
+      ansible.builtin.template:
+        src: templates/generic.service.j2
+        dest: /etc/systemd/system/{{ service_name }}.service
+        owner: root
+        group: root
+        mode: 0600
+      when: multiinstance == False
+    - name: configure systemd to use service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        enabled: yes
+        state: restarted
+        name: "{{ service_name }}.service"
+      when: multiinstance == False
+    - name: Restart multiinstance services
+      ansible.builtin.shell: "systemctl list-units | awk '/camera_monitor.*/ {print $2}' | xargs -I{} sudo systemctl restart {}"
+      when: multiinstance == True

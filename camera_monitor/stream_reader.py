@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from stream_configuration import StreamConfiguration
 from frame_buffer import FrameBuffer
 import logging
@@ -8,13 +8,15 @@ import cv2
 import common
 
 class StreamReader(Process):
-    def __init__(self, stream_configuration:StreamConfiguration, frame_buffer: FrameBuffer):
+    def __init__(self, stream_configuration:StreamConfiguration, frame_buffer: FrameBuffer, outgoing_queue: Queue):
         Process.__init__(self)
 
         self.frame_buffer = frame_buffer
         self.stream_configuration = stream_configuration
         self.capture_source = None
         self.timestamp = perf_counter()
+        self.outgoing_queue = outgoing_queue
+        self.consecutive_resets = 0
 
     def build_capture_source(self):
         self.logger.info(f'Capture Source:{self.stream_configuration.source}')
@@ -47,6 +49,11 @@ class StreamReader(Process):
                         self.frame_buffer.append(frame)
 
                         self.frames += 1
+
+                        if self.consecutive_resets > 0 or self.frames == 1:
+                            self.consecutive_resets = 0
+                            self.outgoing_queue.put({'type': 'health', 'module': 'reader', 'status': 'healthy'})
+
                         if self.frames == 500:
                             new_ts = perf_counter()
                             duration = new_ts - self.timestamp
@@ -60,6 +67,10 @@ class StreamReader(Process):
                         self.logger.warn(f'Frame read failed.  Restarting capture.')
 
                         self.build_capture_source()
+
+                        self.consecutive_resets += 1
+
+                        self.outgoing_queue.put({'type': 'health', 'module': 'reader', 'status': 'restart', 'consecutive_restarts': self.consecutive_resets})
 
                 self.logger.warn(f'Capture source is closed.')
             except Exception as e:

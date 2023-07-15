@@ -8,14 +8,14 @@ from mqtt_connection import MqttConnection
 from controller import Controller
 
 class MqttMonitor(Process):
-    def __init__(self, mqtt_configuration: MqttConfiguration, controller: Controller, file_moved_queue: Queue):
+    def __init__(self, mqtt_configuration: MqttConfiguration, controller: Controller, outgoing_queue: Queue):
         Process.__init__(self)
 
         self.logger = common.get_logger('MqttMonitor')
         self.controller = controller
 
         self.mqtt_configuration = mqtt_configuration
-        self.file_moved_queue = file_moved_queue
+        self.outgoing_queue = outgoing_queue
                             
     def record_message_curry(self):
         def record_message(userdata, payload):
@@ -55,6 +55,11 @@ class MqttMonitor(Process):
         self.configure()
 
         while True:
-            file_move = self.file_moved_queue.get()
+            msg = self.outgoing_queue.get()
 
-            self.mqtt_connection.publish('camera_monitor/file_moved', json.dumps(file_move))
+            if msg.get('type') == 'file_moved':
+                self.logger.info(f'file_moved: {msg}')
+                self.mqtt_connection.publish('camera_monitor/file_moved', json.dumps(msg))
+            elif msg.get('type') == 'health':
+                self.logger.info(f'health: {msg}')
+                self.mqtt_connection.publish('camera_monitor/health', json.dumps(msg))

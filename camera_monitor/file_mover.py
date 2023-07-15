@@ -47,7 +47,7 @@ class FileMover(Process):
         if result:
             local_path = Path(capture_complete['filename'])
             full_remote_path = remote_path + local_path.name
-            move_complete = { 'video': capture_complete['video'], 'filename': full_remote_path}
+            move_complete = { 'type': 'file_moved', 'video': capture_complete['video'], 'filename': full_remote_path}
 
             self.move_complete_queue.put(move_complete)
 

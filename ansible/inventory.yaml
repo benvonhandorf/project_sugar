@@ -9,6 +9,7 @@ all:
           shutdown: /sbin/shutdown
           reboot: /sbin/reboot
         picam[01:04]:
+          multiinstance: false
         picam01:
           camera_tuning_file: ov5647
         picam02:
@@ -25,10 +26,12 @@ all:
         razorcrest:
         primemover:
           ansible_user: benvh
-        picam04:
+          multiinstance: true
+        # picam04:
       vars:
         camera_user: camera_stream
         ansible_user: pi
+        multiinstance: false
     fileserver_hosts:
       hosts:
         littlerascal:
