@@ -27,7 +27,7 @@ class MqttConnection:
         def on_disconnect_curry(client, userdata, flags):
             self.logger.warn('on_disconnect')
         
-            self.mqtt_client.reconnect()
+            self.client.reconnect()
 
         return on_disconnect_curry
 
