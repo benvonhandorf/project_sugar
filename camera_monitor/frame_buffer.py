@@ -6,9 +6,10 @@ class FrameBufferManager(BaseManager):
     pass
 
 class FrameBuffer(object):
-    def __init__(self, frame_count):
+    def __init__(self, frame_count, snapshot_offset_frames):
         self.deque = deque(maxlen=frame_count)
         self.latest_frame = None
+        self.snapshot_offset_frames = snapshot_offset_frames
 
     def len(self):
         return len(self.deque)
@@ -24,6 +25,9 @@ class FrameBuffer(object):
             return None
 
     def snapshot(self):
-        return self.latest_frame
+        if len(self.deque) > self.snapshot_offset_frames:
+            return self.deque[-self.snapshot_offset_frames]
+        else:
+            return self.latest_frame
 
 FrameBufferManager.register('FrameBuffer', FrameBuffer)
