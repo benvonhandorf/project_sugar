@@ -72,6 +72,10 @@ class StreamReader(Process):
 
                         self.outgoing_queue.put({'type': 'health', 'module': 'reader', 'status': 'restart', 'consecutive_restarts': self.consecutive_resets})
 
+                self.consecutive_resets += 1
+
+                self.outgoing_queue.put({'type': 'health', 'module': 'reader', 'status': 'restart', 'consecutive_restarts': self.consecutive_resets})
+
                 self.logger.warn(f'Capture source is closed.')
             except Exception as e:
                 self.logger.error(f'Exception: {e}')

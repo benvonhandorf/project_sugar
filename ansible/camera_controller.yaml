@@ -105,7 +105,7 @@
         owner: root
         group: root
         mode: 0440
-      when: camera_tuning_file is not defined and arch_map[ ansible_architecture ] == "aarch64"
+      when: multiinstance == False and camera_tuning_file is not defined and arch_map[ ansible_architecture ] == "aarch64"
     - name: Install unit file to systemd
       ansible.builtin.template:
         src: templates/generic.service.j2

@@ -1,7 +1,7 @@
 Cmnd_Alias CAMERA_STREAM = {{ systemctl }} restart camera_stream, {{ systemctl }} start camera_stream, {{ systemctl }} stop camera_stream, {{ systemctl }} status camera_stream
 Cmnd_Alias CAMERA_MONITOR = {{ systemctl }} restart camera_monitor, {{ systemctl }} start camera_monitor, {{ systemctl }} stop camera_monitor, {{ systemctl }} status camera_monitor
 Cmnd_Alias SHUTDOWN = {{ shutdown }} -h now
-Cmnd_Alias REBOOT = {{ reboot }}
+Cmnd_Alias REBOOT = {{ shutdown }} -r now
 
 %camera_stream ALL= NOPASSWD: CAMERA_STREAM
 %camera_stream ALL= NOPASSWD: CAMERA_MONITOR
