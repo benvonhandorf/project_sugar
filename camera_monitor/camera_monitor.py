@@ -37,6 +37,8 @@ if __name__ == '__main__':
     mqtt_password = CONFIG['mqtt_password']
     feeder = CONFIG.get('feeder_id') or 'feeder01'
 
+    snapshot_offset_seconds = CONFIG.get('snapshot_offset_s') or 1
+
     monitor_delay_startup_sec = CONFIG.get('monitor_delay_startup_sec') or 0
 
     if monitor_delay_startup_sec:
@@ -63,13 +65,14 @@ if __name__ == '__main__':
 
     frame_buffer_seconds = 5
     frame_buffer_count = stream_configuration.framerate * frame_buffer_seconds
+    snapshot_offset_frames = int(stream_configuration.framerate * snapshot_offset_seconds)
 
     logger.info(f'Frame Buffer for {frame_buffer_count} frames.')
 
     frame_buffer_manager = frame_buffer.FrameBufferManager()
     frame_buffer_manager.start()
 
-    frame_buffer = frame_buffer_manager.FrameBuffer(frame_buffer_count)
+    frame_buffer = frame_buffer_manager.FrameBuffer(frame_buffer_count, snapshot_offset_frames)
 
     control_queue = Queue()
     snapshot_queue = Queue()
