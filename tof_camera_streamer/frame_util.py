@@ -1,13 +1,16 @@
 import numpy as np
 
-def normalize_depth(depth_buf: np.ndarray, amplitude_buf: np.ndarray, max_distance: float) -> np.ndarray:
-    depth_buf = np.nan_to_num(depth_buf)
+def filter_depth_with_amplitude(depth_buf: np.ndarray, amplitude_buf: np.ndarray, amplitude_cutoff_value=4) -> np.ndarray:
+    amplitude_buf = amplitude_buf.copy()
 
-    depth_buf = (1 - (depth_buf/max_distance)) * max_distance
-
-    amplitude_buf[amplitude_buf<=7] = np.nan
-    amplitude_buf[amplitude_buf>7] = 1.0
+    amplitude_buf[amplitude_buf <= amplitude_cutoff_value] = np.nan #Eliminate these depth values
+    amplitude_buf[amplitude_buf > amplitude_cutoff_value] = 1.0 # 
 
     res = amplitude_buf * depth_buf
 
     return res
+
+def convert_depth_to_meters(depth_buf: np.ndarray, max_distance: float):
+    depth_buf = depth_buf * max_distance
+
+    return depth_buf

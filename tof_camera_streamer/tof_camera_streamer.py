@@ -5,48 +5,94 @@ import ArducamDepthCamera as ac
 import time
 import frame_util
 
-MAX_DISTANCE = 2
+MAX_DISTANCE = 2.0
 
-amplitude_stream_url = 'rtsp://littlerascal:8554/depth_amplitude'
-depth_stream_url = 'rtsp://littlerascal:8554/depth_depth'
-stream_url = 'rtsp://littlerascal:8554/depth'
+amplitude_stream_url = 'rtsp://localhost:8554/camera1/depth_amplitude'
+#depth_stream_url = 'rtsp://localhost:8554/camera1/depth_depth'
+depth_stream_url = 'rtsp://localhost:8554/camera1'
 
-# URL_PREFIX = 'appsrc ! videoconvert ! nvv4l2h264enc ! video/x-h264,level=(string)4 ! h264parse ! queue ! '
-# URL_PREFIX = 'appsrc ! video/x-raw,format=RGB,width=240,height=180 ! autovideoconvert ! omxh264enc ! rtspclientsink location='
-URL_PREFIX = 'appsrc ! fakesink'
+# URL_PREFIX = 'appsrc ! video/x-raw,format=BGR,width=240,height=180 ! filesink location=raw.vid'
+# stream_url = ''
+
+URL_PREFIX = 'appsrc ! video/x-raw,format=BGR,width=240,height=180 ! videoconvert ! video/x-raw,format=RGBA ! nvvidconv ! video/x-raw(memory:NVMM) ! nvv4l2h264enc ! video/x-h264,level=(string)4 ! h264parse ! rtspclientsink location='
+# URL_PREFIX = 'appsrc ! video/x-raw,format=BGR,width=240,height=180 ! autovideoconvert ! avenc_mjpeg ! rtpjpegpay ! rtspclientsink location='
+# URL_PREFIX = 'appsrc ! video/x-raw,format=BGR,width=240,height=180 ! videoconvert ! video/x-raw,format=I420 ! '
+# URL_PREFIX = 'appsrc ! video/x-raw,format=BGR,width=240,height=180 ! videoconvert ! video/x-raw,format=I420 ! avenc_mjpeg ! jpegparse ! rtpjpegpay ! rtspclientsink location='
+stream_url = 'rtsp://localhost:8554/camera1'
+
 FPS = 30
 FRAME_SIZE = (240,180)
 
 rng = np.random.default_rng()
 
-def write_grayscale_image(video_writer, image_grayscale):
-    temp_image = rng.random(size=(240, 180))
-    temp_image = temp_image * 256
-    temp_image = temp_image.astype(np.uint8)
-    colormapped_image = cv2.applyColorMap(temp_image, cv2.COLORMAP_VIRIDIS)
-    # temp_image = np.empty_like(image_grayscale)
+def clamp_amplitude(amplitude_buf, clamp_value = 500):
+    amplitude_buf[amplitude_buf > clamp_value] = clamp_value
 
-    # cv2.normalize(image_grayscale, temp_image, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    
-    # temp_image[temp_image < 0] = 0
-    # np.nan_to_num(temp_image)
+
+def write_grayscale_image(video_writer, ranged_depth_data: np.ndarray, max_range: float):
+
+    temp_image = np.empty_like(ranged_depth_data)
+
+    temp_image = (temp_image / max_range) * 255
+
+    np.nan_to_num(temp_image, max_range)
+
+    temp_image = temp_image.astype(dtype=np.uint8)
 
     # temp_image = temp_image * (255/temp_image.max())
     # print(f'{np.nanmax(temp_image)} {np.nanmin(temp_image)}')
 
-    # temp_image = temp_image.astype(np.uint8)
-    # temp_image = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2RGB)
+    # print(f'{temp_image.dtype} {temp_image.shape}')
+    
+    colormapped_image = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2BGR)
 
-    video_writer.write(colormapped_image)
+    virdis_image = cv2.applyColorMap(colormapped_image, cv2.COLORMAP_VIRIDIS)
 
-def transform_buffer(buffer):
-    np.fliplr(buffer)
-    np.flipud(buffer)
+    # print(f'{colormapped_image.shape}')
+
+    video_writer.write(virdis_image)
+
+    return True # np.average(temp_image) < 60
+
+
+AVERAGE_WINDOW = 15
+
+amplitude_averaging_data = np.full((AVERAGE_WINDOW, 180, 240), np.nan, dtype=np.float32)
+
+current_element = 0
+
+mask_data = None
+
+def add_average_amplitude(amplitude_buf):
+    global current_element
+
+    amplitude_averaging_data[current_element] = amplitude_buf
+    current_element += 1
+
+    if current_element >= AVERAGE_WINDOW:
+        current_element = 0
+
+
+def build_mask(amplitude_averaging_data, depth_data, cutoff_value = 60):
+    amplitude_average = np.average(amplitude_averaging_data, axis=0)
+
+    mask_data = np.full(amplitude_average.shape, np.nan, dtype=np.float32)
+
+    mask_data = np.where(amplitude_average > cutoff_value, depth_data, np.nan)
+
+    return mask_data
+
+def apply_mask(depth_data, mask_data, inset_range: float = 0.15):
+    # depth_data = np.where((mask_data == np.nan) , depth_data, np.nan)
+    #| (mask_data > depth_data)
+    #| ((mask_data - depth_data) > inset_range)
+
+    return depth_data
 
 
 if __name__ == "__main__":
     cam = ac.ArducamCamera()
-    if cam.init(ac.TOFConnect.CSI,0) != 0 :
+    if cam.init(ac.TOFConnect.CSI,1) != 0 :
         print("initialization failed")
         exit(-1)
 
@@ -54,14 +100,9 @@ if __name__ == "__main__":
         print("Failed to start camera")
         exit(-1)
 
-    cam.setControl(ac.TOFControl.RANG, MAX_DISTANCE)
+    cam.setControl(ac.TOFControl.RANG, int(MAX_DISTANCE))
 
-    four_cc = cv2.VideoWriter_fourcc(*'MJPG')
-
-    # amplitude_writer = cv2.VideoWriter(URL_PREFIX + amplitude_stream_url + " ", four_cc, FPS, FRAME_SIZE, isColor=False)
-    # depth_writer = cv2.VideoWriter(URL_PREFIX + depth_stream_url + " ", four_cc, FPS, FRAME_SIZE, isColor=False)
-    # stream_writer = cv2.VideoWriter(URL_PREFIX + stream_url, four_cc, FPS, FRAME_SIZE, isColor=True)
-    stream_writer = cv2.VideoWriter(URL_PREFIX, four_cc, FPS, FRAME_SIZE, isColor=True)
+    stream_writer = cv2.VideoWriter(URL_PREFIX + stream_url, cv2.CAP_GSTREAMER, FPS, FRAME_SIZE, isColor=True)
 
     if not stream_writer.isOpened():
         print(f'Video writer is not opened')
@@ -69,10 +110,9 @@ if __name__ == "__main__":
 
     # background_depth_buffer = np.loadtxt("background_depth.csv", delimiter=',')
 
-    count = 0
-    last_timestamp = time.time()
+    print('Building background mask')
 
-    while True:
+    for x in range(0, AVERAGE_WINDOW):
         frame = cam.requestFrame(200)
 
         if frame != None:
@@ -80,24 +120,56 @@ if __name__ == "__main__":
             amplitude_buf = frame.getAmplitudeData()
             cam.releaseFrame(frame)
 
-            transform_buffer(depth_buf)
-            transform_buffer(amplitude_buf)
+            clamp_amplitude(amplitude_buf)
 
-            normalized_depth = frame_util.normalize_depth(depth_buf, amplitude_buf, MAX_DISTANCE)
+            add_average_amplitude(amplitude_buf)
 
-            # write_grayscale_image(depth_writer, depth_buf)
-            # write_grayscale_image(amplitude_writer, amplitude_buf)
-            write_grayscale_image(stream_writer, normalized_depth)
+            time.sleep(0.50)
 
-            # difference_depth = np.subtract(normalized_depth, background_depth_buffer)
+    mask_data = build_mask(amplitude_averaging_data, depth_buf)
 
-            # np.savetxt("difference_depth.csv", difference_depth, delimiter=',')
+    np.savetxt("depth_mask.csv", mask_data, delimiter=',')
 
-            # difference_depth = np.nan_to_num(difference_depth)
+    print(f'Mask complete')
 
-            # sum = np.sum(difference_depth)
+    count = 0
+    last_timestamp = time.time()
 
-            # print(f'Delta Sum: {sum}')
+    while True:
+        frame = cam.requestFrame(200)
+
+        if frame != None :
+            depth_buf = frame.getDepthData()
+            amplitude_buf = frame.getAmplitudeData()
+            cam.releaseFrame(frame)
+
+            if depth_buf.shape != (180, 240) or amplitude_buf.shape != (180, 240):
+                print(f'Invalid frame: {depth_buf.shape} {amplitude_buf.shape}')
+                continue
+
+            # if count == 0:
+            #     np.savetxt("running_depth.csv", depth_buf, delimiter=',')
+            #     np.savetxt("running_amplitude.csv", amplitude_buf, delimiter=',')
+
+            clamp_amplitude(amplitude_buf)
+
+            add_average_amplitude(amplitude_buf)
+
+            amplitude_average = np.average(amplitude_averaging_data, axis=0)
+
+            filtered_depth = frame_util.filter_depth_with_amplitude(depth_buf, amplitude_average, 60)
+
+            masked_depth_data = apply_mask(filtered_depth, mask_data)
+
+            ranged_depth = frame_util.convert_depth_to_meters(masked_depth_data, MAX_DISTANCE)
+
+            if not write_grayscale_image(stream_writer, ranged_depth, MAX_DISTANCE):
+                # Weird data, capture it.
+
+                np.savetxt("suspect_depth.csv", depth_buf, delimiter=',')
+                np.savetxt("amplitude_average.csv", amplitude_average, delimiter=',')
+
+                print(f'Data captured.  {np.average(amplitude_average)} against {np.average(amplitude_averaging_data)}')
 
         else:
             print("Unable to acquire frame")
@@ -116,3 +188,7 @@ if __name__ == "__main__":
             print(f'{fps} fps.')
 
             last_timestamp = now
+
+
+    stream_writer.release()
+    cam.close()

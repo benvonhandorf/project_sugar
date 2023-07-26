@@ -8,49 +8,43 @@
 
 #if FM == 1
 
-float calibrationValue = -970.83;
-
+#define FEEDER_ID "1"
 const char *HOSTNAME = "feedermonitor01";
-const char *WILL_TOPIC = "sensors/feeders/1/status";
-const char *RESET_TOPIC = "sensors/feeders/1/reset";
-const char *RAW_TOPIC = "sensors/feeders/1/raw";
-const char *BATCH_RAW_TOPIC = "sensors/feeders/1/raw_batch";
-const char *AVERAGE_TOPIC = "sensors/feeders/1/average";
-const char *TRIGGER_TOPIC = "sensors/feeders/1/trigger";
-const char *MESSAGE_TOPIC = "sensors/feeders/1/message";
-const char *RSSI_TOPIC = "sensors/feeders/1/rssi_batch";
+
+float calibrationValue = -970.83;
 
 #elif FM == 2
 
-float calibrationValue = 986.94;
-
+#define FEEDER_ID "2"
 const char *HOSTNAME = "feedermonitor02";
-const char *WILL_TOPIC = "sensors/feeders/2/status";
-const char *RESET_TOPIC = "sensors/feeders/2/reset";
-const char *RAW_TOPIC = "sensors/feeders/2/raw";
-const char *BATCH_RAW_TOPIC = "sensors/feeders/2/raw_batch";
-const char *AVERAGE_TOPIC = "sensors/feeders/2/average";
-const char *TRIGGER_TOPIC = "sensors/feeders/2/trigger";
-const char *MESSAGE_TOPIC = "sensors/feeders/2/message";
-const char *RSSI_TOPIC = "sensors/feeders/2/rssi_batch";
+
+float calibrationValue = 986.94;
 
 #elif FM == 3
 
-float calibrationValue = 906.79;
-
+#define FEEDER_ID "3"
 const char *HOSTNAME = "feedermonitor03";
-const char *WILL_TOPIC = "sensors/feeders/3/status";
-const char *RESET_TOPIC = "sensors/feeders/3/reset";
-const char *RAW_TOPIC = "sensors/feeders/3/raw";
-const char *BATCH_RAW_TOPIC = "sensors/feeders/3/raw_batch";
-const char *AVERAGE_TOPIC = "sensors/feeders/3/average";
-const char *TRIGGER_TOPIC = "/ensors/feeders/3/trigger";
-const char *MESSAGE_TOPIC = "sensors/feeders/3/message";
-const char *RSSI_TOPIC = "sensors/feeders/3/rssi_batch";
+
+float calibrationValue = 906.79;
 
 #endif
 
-//#define DEBUG_PUBLISH 1
+#ifndef FEEDER_ID
+#define FEEDER_ID "999"
+#endif
+
+#define ROOT_TOPIC "sensors/feeders/"
+
+const char *WILL_TOPIC = ROOT_TOPIC FEEDER_ID "/status";
+const char *RESET_TOPIC = ROOT_TOPIC FEEDER_ID "/reset";
+const char *BATCH_RAW_TOPIC = ROOT_TOPIC FEEDER_ID "/raw_batch";
+const char *AVERAGE_TOPIC = ROOT_TOPIC FEEDER_ID "/average";
+const char *TRIGGER_TOPIC = ROOT_TOPIC FEEDER_ID "/trigger";
+const char *MESSAGE_TOPIC = ROOT_TOPIC FEEDER_ID "/message";
+const char *RSSI_TOPIC = ROOT_TOPIC FEEDER_ID "/rssi_batch";
+const char *CONTROL_TOPIC = ROOT_TOPIC FEEDER_ID "/control";
+
+bool debug_publish = false;
 
 const char *mqtt_server = "littlerascal";
 const char *MQTT_USER = "sensor_writer";
@@ -67,23 +61,23 @@ PubSubClient client(espClient);
 
 void println(const char *s) {
     Serial.println(s);
-#ifdef DEBUG_PUBLISH
-    client.publish(MESSAGE_TOPIC, s);
-#endif
+    if(debug_publish) {
+        client.publish(MESSAGE_TOPIC, s);
+    }
 }
 
 void println(const String &s) {
     Serial.println(s);
-#ifdef DEBUG_PUBLISH
-    client.publish(MESSAGE_TOPIC, s.c_str());
-#endif
+    if(debug_publish) {
+        client.publish(MESSAGE_TOPIC, s.c_str());
+    }
 }
 
 void print(const char *s) {
     Serial.print(s);
-#ifdef DEBUG_PUBLISH
-    client.publish(MESSAGE_TOPIC, s);
-#endif
+    if(debug_publish) {
+        client.publish(MESSAGE_TOPIC, s);
+    }
 }
 
 void halt() {
@@ -119,6 +113,8 @@ void initWiFi_block() {
 }
 
 void MQTT_reconnect() {
+    uint32_t retries = 10;
+
     while (!client.connected()) {
         if(!WiFi.isConnected()) {
             println("Wifi Disconnected.  Attempting to reconnect.");
@@ -137,7 +133,34 @@ void MQTT_reconnect() {
             print("MQTT Attempt Failed, rc=");
             println(String(client.state()));
 
-            delay(5000);
+            delay(3000);
+        }
+
+        retries--;
+
+        if(retries == 0) {
+            ESP.restart();
+        }
+    }
+
+    client.subscribe(CONTROL_TOPIC);
+}
+
+void MQTT_callback(char* topic, byte* payload, unsigned int length) {
+    println("Message arrived [" + String(topic) + "] ");
+
+    String msg = "";
+
+    for (uint32_t i = 0; i < length; i++) {
+        msg += (char)payload[i];
+    }
+
+    println(msg);
+
+    if(strcmp(topic, CONTROL_TOPIC) == 0) {
+        if(strcmp(msg.c_str(), "reset") == 0) {
+            println("Resetting");
+            ESP.restart();
         }
     }
 }
@@ -145,6 +168,7 @@ void MQTT_reconnect() {
 void initMQTT_block() {
     client.setServer(mqtt_server, 1883);
     client.setBufferSize(2048);
+    client.setCallback(MQTT_callback);
 
     MQTT_reconnect();
 }
@@ -276,7 +300,7 @@ String msg = "{\"duration\":" + String(durationMs) + ",\"data\":[";
         msg += fmt;
 
         if (i < count - 1) {
-            msg += ", ";
+            msg += ",";
         }
     }
     msg += "]}";
@@ -298,7 +322,7 @@ bool writeBatchInt8(const char *topic, int8_t *readings, uint16_t count,
         msg += fmt;
 
         if (i < count - 1) {
-            msg += ", ";
+            msg += ",";
         }
     }
     msg += "]}";
@@ -369,6 +393,8 @@ void loop() {
 
         uint32_t duration = millis() - rawFirstSample;
 
+        client.loop();
+
         success =
             writeBatchFloat(BATCH_RAW_TOPIC, rawReadings, rawReadingsCount, duration);
 
@@ -377,8 +403,11 @@ void loop() {
             rawReadingsCount = 0;
             rawFirstSample = 0;
         } else {
+            client.loop(); //Added to try and ensure that the client.state() is accurate
+            debug_publish = true;
             println("Raw batch failed.");
             println(String(client.state()));
+            debug_publish = false;
         }
     }
 
