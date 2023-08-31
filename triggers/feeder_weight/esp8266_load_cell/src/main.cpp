@@ -43,6 +43,7 @@ const char *TRIGGER_TOPIC = ROOT_TOPIC FEEDER_ID "/trigger";
 const char *MESSAGE_TOPIC = ROOT_TOPIC FEEDER_ID "/message";
 const char *RSSI_TOPIC = ROOT_TOPIC FEEDER_ID "/rssi_batch";
 const char *CONTROL_TOPIC = ROOT_TOPIC FEEDER_ID "/control";
+const char *WATCHDOG_TOPIC = ROOT_TOPIC FEEDER_ID "/watchdog";
 
 bool debug_publish = false;
 
@@ -52,6 +53,9 @@ const char *MQTT_PASSWORD = "fln0eFi79yhK";
 
 const int OTA_PORT = 8267;
 const char *OTA_PASSWORD = "dlafjsdlk";
+
+const long WATCHDOG_TIMEOUT_MS = 3600000;
+long watchdog_timer = WATCHDOG_TIMEOUT_MS;
 
 // HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
@@ -162,6 +166,9 @@ void MQTT_callback(char* topic, byte* payload, unsigned int length) {
             println("Resetting");
             ESP.restart();
         }
+    } else if(strcmp(topic, WATCHDOG_TOPIC) == 0) {
+        watchdog_timer = WATCHDOG_TIMEOUT_MS;
+        println("Watchdog Reset");
     }
 }
 
@@ -372,10 +379,27 @@ void setup() {
     publishTrigger(false, 0.0f);
 }
 
+long last_ms = 0;
+
 void loop() {
     if (!client.connected()) {
         MQTT_reconnect();
     }
+
+    if(last_ms == 0) {
+        last_ms = millis();
+    }
+
+    watchdog_timer -= millis() - last_ms;
+
+    if(watchdog_timer < 0) {
+        println("Watchdog Reset");
+        
+        client.flush();
+
+        ESP.reset();
+    }
+
     bool success = false;
     float val = readDataWithAveraging();
     readingCount++;
