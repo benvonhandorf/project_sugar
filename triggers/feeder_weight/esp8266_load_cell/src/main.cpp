@@ -168,6 +168,7 @@ void MQTT_callback(char* topic, byte* payload, unsigned int length) {
         }
     } else if(strcmp(topic, WATCHDOG_TOPIC) == 0) {
         watchdog_timer = WATCHDOG_TIMEOUT_MS;
+
         println("Watchdog Reset");
     }
 }
@@ -391,6 +392,7 @@ void loop() {
     }
 
     watchdog_timer -= millis() - last_ms;
+    last_ms = millis();
 
     if(watchdog_timer < 0) {
         println("Watchdog Reset");
