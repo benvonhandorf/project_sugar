@@ -72,6 +72,8 @@ def on_control_message(topic, payload):
         time.sleep(5)
 
         os.system(f'sudo shutdown -r now')
+    else:
+        logger.warn(f'Unknown message {payload}')
 
 def publish_status(status_value):
     mqtt_connection.publish('status', status_value)

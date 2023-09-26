@@ -1,0 +1,16 @@
+- name: Configure network watchdog
+  become: true
+  become_user: root
+  hosts: picam01,picam02,picam03,picam04,razorcrest
+  tasks:
+    - name: Install watchdog
+      ansible.builtin.apt:
+        name: watchdog
+        state: present
+    - name: Install watchdog.conf
+      ansible.builtin.template:
+        src: templates/watchdog.conf.j2
+        dest: /etc/watchdog.conf
+        owner: root
+        group: root
+        mode: 0640
