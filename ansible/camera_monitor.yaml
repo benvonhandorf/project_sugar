@@ -1,7 +1,8 @@
 - name: Install Camera Monitors
   become: true
   become_user: root
-  hosts: camera_monitors
+  hosts: primemover
+  # hosts: camera_monitors
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -113,5 +114,6 @@
         name: "{{ service_name }}.service"
       when: multiinstance == False
     - name: Restart multiinstance services
-      ansible.builtin.shell: "systemctl list-units | awk '/camera_monitor.*/ {print $2}' | xargs -I{} sudo systemctl restart {}"
+      ansible.builtin.shell: "systemctl list-units | awk '/camera_monitor.*/ {print $1}' | xargs -I{} sudo systemctl restart {}"
+      # ansible.builtin.shell: "systemctl list-units | awk '/camera_monitor.*/ {print $2}' | xargs -I{} sudo systemctl restart {}"
       when: multiinstance == True

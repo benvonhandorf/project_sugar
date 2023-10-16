@@ -83,6 +83,3 @@ class MqttConnection:
         self.logger.debug(f'publish: {full_topic}: {value}')
 
         self.client.publish(full_topic, value)
-
-        # Ensure messages can be flushed immediately
-        self.client.loop()

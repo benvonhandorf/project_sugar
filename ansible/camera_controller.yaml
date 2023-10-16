@@ -1,7 +1,8 @@
 - name: Install Camera Controller
   become: true
   become_user: root
-  hosts: camera_controllers
+  hosts: picam01, picam04
+  # hosts: camera_controllers
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -81,14 +82,14 @@
     #   ansible.builtin.pip:
     #     state: present
     #     requirements: "{{ working_directory }}/requirements.txt"
-    - name: Copy default config
-      ansible.builtin.copy:
-        force: false
-        remote_src: true
-        src: "{{ working_directory }}/camera_config_default.json"
-        dest: "{{ home_directory }}/camera_config.json"
-        owner: "{{ username }}"
-        group: "{{ group }}"
+    # - name: Copy default config
+    #   ansible.builtin.copy:
+    #     force: false
+    #     remote_src: true
+    #     src: "{{ working_directory }}/camera_config_default.json"
+    #     dest: "{{ home_directory }}/camera_config.json"
+    #     owner: "{{ username }}"
+    #     group: "{{ group }}"
       when: multiinstance == False
     - name: Install sudoers file
       ansible.builtin.template:

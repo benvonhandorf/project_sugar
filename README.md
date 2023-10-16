@@ -29,6 +29,8 @@ Unfortunately I can't run to the feeders every time there is a hummingbird, so t
 
 Due to availability, version one will be based on an [Android Things Development Kit](https://developer.android.com/things/hardware/imx7d) that I have on hand.
 
+Nope, Android things is dead-dead at this point.  Older Android tablets will suffice.
+
 ### Monitoring and Recognition ###
 This section is still under research.  The intention is to use machine learning vision algorithims (possibly [YOLO](https://pjreddie.com/darknet/yolo/)) to monitor the stream from one or more Sugar Cam and detect the presence of Hummmingbirds.  This data would then flow into the notification system.
 

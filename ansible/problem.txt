@@ -1,0 +1,30 @@
+Sep 27 10:13:50 picam01 python3[7489]: 2023-09-27 10:13:50 MqttConnection WARNING  on_disconnect
+Sep 27 10:13:50 picam01 python3[7489]: Exception in thread Thread-1:
+Sep 27 10:13:50 picam01 python3[7489]: Traceback (most recent call last):
+Sep 27 10:13:50 picam01 python3[7489]:   File "/usr/lib/python3.9/threading.py", line 954, in _bootstrap_inner
+Sep 27 10:13:50 picam01 python3[7489]:     self.run()
+Sep 27 10:13:50 picam01 python3[7489]:   File "/usr/lib/python3.9/threading.py", line 892, in run
+Sep 27 10:13:50 picam01 python3[7489]:     self._target(*self._args, **self._kwargs)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 3591, in _thread_main
+Sep 27 10:13:50 picam01 python3[7489]:     self.loop_forever(retry_first_connection=True)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 1756, in loop_forever
+Sep 27 10:13:50 picam01 python3[7489]:     rc = self._loop(timeout)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 1164, in _loop
+Sep 27 10:13:50 picam01 python3[7489]:     rc = self.loop_read()
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 1558, in loop_read
+Sep 27 10:13:50 picam01 python3[7489]:     return self._loop_rc_handle(rc)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 2350, in _loop_rc_handle
+Sep 27 10:13:50 picam01 python3[7489]:     self._do_on_disconnect(rc, properties)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 3475, in _do_on_disconnect
+Sep 27 10:13:50 picam01 python3[7489]:     on_disconnect(self, self._userdata, rc)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/camera_controller/mqtt_connection.py", line 30, in on_disconnect_curry
+Sep 27 10:13:50 picam01 python3[7489]:     self.client.reconnect()
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 1044, in reconnect
+Sep 27 10:13:50 picam01 python3[7489]:     sock = self._create_socket_connection()
+Sep 27 10:13:50 picam01 python3[7489]:   File "/home/camera_stream/.local/lib/python3.9/site-packages/paho/mqtt/client.py", line 3685, in _create_socket_connection
+Sep 27 10:13:50 picam01 python3[7489]:     return socket.create_connection(addr, timeout=self._connect_timeout, source_address=source)
+Sep 27 10:13:50 picam01 python3[7489]:   File "/usr/lib/python3.9/socket.py", line 822, in create_connection
+Sep 27 10:13:50 picam01 python3[7489]:     for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+Sep 27 10:13:50 picam01 python3[7489]:   File "/usr/lib/python3.9/socket.py", line 953, in getaddrinfo
+Sep 27 10:13:50 picam01 python3[7489]:     for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+Sep 27 10:13:50 picam01 python3[7489]: socket.gaierror: [Errno -2] Name or service not known

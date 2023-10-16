@@ -21,6 +21,7 @@ all:
       vars:
         camera_user: camera_stream
         ansible_user: pi
+        simple_host: true
     camera_monitors:
       hosts:
         razorcrest:
@@ -32,6 +33,7 @@ all:
         camera_user: camera_stream
         ansible_user: pi
         multiinstance: false
+        simple_host: false
     fileserver_hosts:
       hosts:
         littlerascal:
