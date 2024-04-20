@@ -11,14 +11,14 @@
 #define FEEDER_ID "1"
 const char *HOSTNAME = "feedermonitor01";
 
-float calibrationValue = -970.83;
+float calibrationValue = 986.94;
 
 #elif FM == 2
 
 #define FEEDER_ID "2"
 const char *HOSTNAME = "feedermonitor02";
 
-float calibrationValue = 986.94;
+float calibrationValue = -970.83;
 
 #elif FM == 3
 
@@ -90,15 +90,24 @@ void halt() {
     }
 }
 
-const char *WIFI_AP_NAME = "OBLIVION";
+#if FM == 2
+//FM2 is closer to the main wifi AP
+const char *WIFI_AP_NAME = "Oblivion";
 const char *WIFI_PASS = "t4unjath0mson";
+
+#else
+
+const char *WIFI_AP_NAME = "OblivionOD";
+const char *WIFI_PASS = "outerdarkness1!";
+
+#endif
 
 uint32_t reset_reason = 0;
 uint32_t reset_exception = 0;
 
 void initWiFi_block() {
     WiFi.mode(WIFI_STA);
-    // WiFi.begin("FakeSun", "T4vyt3FYWCs9YjChzuh7DeQV");
+    
     WiFi.begin(WIFI_AP_NAME, WIFI_PASS);
     Serial.println("Conencting to WiFI");
     while (WiFi.status() != WL_CONNECTED) {
