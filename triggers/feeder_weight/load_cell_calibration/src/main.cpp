@@ -18,10 +18,98 @@
        float newCalibrationValue = LoadCell.getNewCalibration(known_mass);
 */
 
+#include <ArduinoOTA.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+
 #include <HX711_ADC.h>
 #if defined(ESP8266)|| defined(ESP32) || defined(AVR)
 #include <EEPROM.h>
 #endif
+
+#if FM == 1
+
+#define FEEDER_ID "1"
+const char *HOSTNAME = "feedermonitor01";
+
+#elif FM == 2
+
+#define FEEDER_ID "2"
+const char *HOSTNAME = "feedermonitor02";
+
+#elif FM == 3
+
+#define FEEDER_ID "3"
+const char *HOSTNAME = "feedermonitor03";
+
+#endif
+
+const char *WIFI_AP_NAME = "Oblivion";
+const char *WIFI_PASS = "t4unjath0mson";
+
+const int OTA_PORT = 8267;
+const char *OTA_PASSWORD = "dlafjsdlk";
+
+uint32_t reset_reason = 0;
+uint32_t reset_exception = 0;
+
+void initWiFi_block() {
+    WiFi.mode(WIFI_STA);
+    
+    WiFi.begin(WIFI_AP_NAME, WIFI_PASS);
+    Serial.println("Conencting to WiFI");
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print('.');
+        delay(500);
+    }
+
+    Serial.println();
+    Serial.println(WiFi.localIP());
+
+    if (!MDNS.begin(HOSTNAME)) {
+        Serial.println("Error setting up MDNS responder!");
+    }
+
+    WiFi.setAutoReconnect(true);
+}
+
+void initOTA_block() {
+    ArduinoOTA.setPort(OTA_PORT);
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    ArduinoOTA.setHostname(HOSTNAME);
+
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH) {
+            type = "sketch";
+        } else {  // U_FS
+            type = "filesystem";
+        }
+
+        // NOTE: if updating FS this would be the place to unmount FS using
+        // FS.end()
+        Serial.println("Start updating " + type);
+    });
+    ArduinoOTA.onEnd([]() { Serial.println("\nEnd"); });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    });
+    ArduinoOTA.onError([](ota_error_t error) {
+        printf("Error[%u]: ", error);
+        if (error == OTA_AUTH_ERROR) {
+            Serial.println("Auth Failed");
+        } else if (error == OTA_BEGIN_ERROR) {
+            Serial.println("Begin Failed");
+        } else if (error == OTA_CONNECT_ERROR) {
+            Serial.println("Connect Failed");
+        } else if (error == OTA_RECEIVE_ERROR) {
+            Serial.println("Receive Failed");
+        } else if (error == OTA_END_ERROR) {
+            Serial.println("End Failed");
+        }
+    });
+    ArduinoOTA.begin();
+}
 
 
 //HX711 constructor:
@@ -170,6 +258,10 @@ void setup() {
   Serial.println();
   Serial.println("Starting...");
 
+  initWiFi_block();
+
+  initOTA_block();
+
   LoadCell.begin();
   //LoadCell.setReverseOutput(); //uncomment to turn a negative output value to positive
   unsigned long stabilizingtime = 2000; // preciscion right after power-up can be improved by adding a few seconds of stabilizing time
@@ -217,5 +309,8 @@ void loop() {
   if (LoadCell.getTareStatus() == true) {
     Serial.println("Tare complete");
   }
+
+
+  ArduinoOTA.handle();
 
 }
