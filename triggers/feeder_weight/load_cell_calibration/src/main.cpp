@@ -21,6 +21,8 @@
 #include <ArduinoOTA.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include "ESPTelnet.h"
+
 
 #include <HX711_ADC.h>
 #if defined(ESP8266)|| defined(ESP32) || defined(AVR)
@@ -43,6 +45,8 @@ const char *HOSTNAME = "feedermonitor02";
 const char *HOSTNAME = "feedermonitor03";
 
 #endif
+
+ESPTelne
 
 const char *WIFI_AP_NAME = "Oblivion";
 const char *WIFI_PASS = "t4unjath0mson";
@@ -139,6 +143,8 @@ void calibrate() {
       Serial.println("Tare complete");
       _resume = true;
     }
+
+    ArduinoOTA.handle();
   }
 
   Serial.println("Now, place your known mass on the loadcell.");
@@ -156,6 +162,8 @@ void calibrate() {
         _resume = true;
       }
     }
+
+    ArduinoOTA.handle();
   }
 
   LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
@@ -193,6 +201,8 @@ void calibrate() {
         _resume = true;
       }
     }
+
+    ArduinoOTA.handle();
   }
 
   Serial.println("End calibration");
@@ -220,6 +230,7 @@ void changeSavedCalFactor() {
         _resume = true;
       }
     }
+    ArduinoOTA.handle();
   }
   _resume = false;
   Serial.print("Save this value to EEPROM adress ");
@@ -248,10 +259,13 @@ void changeSavedCalFactor() {
         _resume = true;
       }
     }
+    ArduinoOTA.handle();
   }
   Serial.println("End change calibration value");
   Serial.println("***");
 }
+
+
 
 void setup() {
   Serial.begin(115200); delay(10);
@@ -261,6 +275,11 @@ void setup() {
   initWiFi_block();
 
   initOTA_block();
+
+  telnet.onConnect(onTelnetConnect);
+  telnet.onConnectionAttempt(onTelnetConnectionAttempt);
+  telnet.onReconnect(onTelnetReconnect);
+  telnet.onDisconnect(onTelnetDisconnect);
 
   LoadCell.begin();
   //LoadCell.setReverseOutput(); //uncomment to turn a negative output value to positive
