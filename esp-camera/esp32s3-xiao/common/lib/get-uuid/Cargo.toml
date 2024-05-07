@@ -1,0 +1,15 @@
+[package]
+name = "get-uuid"
+version = "0.1.0"
+authors = [
+    "Anatol Ulrich <anatol.ulrich@ferrous-systems.com>",
+    "Sergio Gasquez <sergio.gasquez@gmail.com>",
+]
+edition = "2021"
+
+[dependencies]
+anyhow = "=1.0.75"
+
+[build-dependencies]
+anyhow = "=1.0.75"
+uuid   = { version = "=1.6.1", features = ["v4"] }

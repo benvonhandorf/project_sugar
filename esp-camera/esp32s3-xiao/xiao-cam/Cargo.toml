@@ -1,0 +1,41 @@
+[package]
+name = "xiao-cam"
+version = "0.1.0"
+authors = ["Ben Von Handorf <developer@benvonhandorf.com>"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.71"
+
+[profile.release]
+debug = true    # Symbols are nice and they don't increase the size on Flash
+opt-level = "s"
+
+[profile.dev]
+debug = true    # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
+[features]
+default = ["std", "embassy", "esp-idf-svc/native"]
+
+pio = ["esp-idf-svc/pio"]
+std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]
+alloc = ["esp-idf-svc/alloc"]
+nightly = ["esp-idf-svc/nightly"]
+experimental = ["esp-idf-svc/experimental"]
+embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-svc/embassy-time-driver"]
+
+[dependencies]
+anyhow = "=1.0.75"
+log = { version = "0.4", default-features = false }
+embedded-svc = "=0.26.4"
+esp-idf-svc = { version = "0.47.3", default-features = false }
+shtcx        = "=0.11.0"
+toml-cfg     = "=0.1.3"
+wifi         = { path = "../common/lib/wifi" }
+
+[build-dependencies]
+embuild = "0.31.4"
+toml-cfg = "=0.1.3"
+
+[package.metadata.espflash]
+partition_table = "partitions.csv" # Supports CSV and binary formats
