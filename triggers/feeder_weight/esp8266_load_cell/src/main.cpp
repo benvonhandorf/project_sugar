@@ -11,14 +11,14 @@
 #define FEEDER_ID "1"
 const char *HOSTNAME = "feedermonitor01";
 
-float calibrationValue = -1257.94;
+float calibrationValue = -915.044983;
 
 #elif FM == 2
 
 #define FEEDER_ID "2"
 const char *HOSTNAME = "feedermonitor02";
 
-float calibrationValue = -970.83;
+float calibrationValue = 953.304993;
 
 #elif FM == 3
 
