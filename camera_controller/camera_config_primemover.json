@@ -1,11 +1,12 @@
 {
     "camera_id": "camera0",
-    "camera_host": "picam01",
+    "camera_host": "picam01.local",
     "camera_width": 800,
     "camera_height": 600,
     "camera_fps": 30,
     "feeder_id": "feeder01",
     "monitor_delay_startup_sec": 10,
+
     "mqtt_host": "littlerascal.local",
     "mqtt_port": 1883,
     "mqtt_username": "camera",

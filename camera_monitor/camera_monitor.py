@@ -30,11 +30,15 @@ if __name__ == '__main__':
 
     camera_host = CONFIG.get('camera_host') or os.uname()[1]
     camera_id = CONFIG['camera_id']
+    camera_fqdn = camera_host if '.' in camera_host else f'{camera_host}.local'
 
     mqtt_host = CONFIG['mqtt_host']
     mqtt_port = CONFIG['mqtt_port']
-    mqtt_username = CONFIG['mqtt_username']
-    mqtt_password = CONFIG['mqtt_password']
+    mqtt_username = CONFIG['mqtt_username'] or 'camera'
+    mqtt_password = CONFIG['mqtt_password'] or '8vSZa&#v7p1N'
+
+    filestore_host = CONFIG.get('filestore_host') or mqtt_host
+
     feeder = CONFIG.get('feeder_id') or 'feeder01'
 
     snapshot_offset_seconds = CONFIG.get('snapshot_offset_s') or 1
@@ -49,7 +53,7 @@ if __name__ == '__main__':
     root_topic = f'cameras/{camera_host}/{camera_id}/'
     camera_id = 'camera0'
 
-    stream_configuration = StreamConfiguration(f'rtsp://{camera_host}:8554/{camera_id}', 'data', camera_host, CONFIG['camera_fps'], CONFIG['camera_width'], CONFIG['camera_height'])
+    stream_configuration = StreamConfiguration(f'rtsp://{camera_fqdn}:8554/{camera_id}', 'data', camera_host, CONFIG['camera_fps'], CONFIG['camera_width'], CONFIG['camera_height'])
         
     client_id = f'{camera_host}_{camera_id}_monitor'
     feeder_id = 'feeder01'
@@ -61,7 +65,7 @@ if __name__ == '__main__':
         logger.info(f'Creating directory {stream_configuration.directory}')
         os.makedirs(stream_configuration.directory)
 
-    file_mover_config = FileMoverConfig('littlerascal', 'camera_files', f'storage/{feeder_id}/')
+    file_mover_config = FileMoverConfig(filestore_host, 'camera_files', f'storage/{feeder_id}/')
 
     frame_buffer_seconds = 5
     frame_buffer_count = stream_configuration.framerate * frame_buffer_seconds
@@ -93,7 +97,7 @@ if __name__ == '__main__':
 
     controller = Controller(control_queue, snapshot_queue)
 
-    mqtt_configuration = MqttConfiguration('littlerascal', 'camera', '8vSZa&#v7p1N', root_topic, client_id)
+    mqtt_configuration = MqttConfiguration(mqtt_host, mqtt_username, mqtt_password, root_topic, client_id)
 
     mqtt_monitor = MqttMonitor(mqtt_configuration, controller, outgoing_queue)
     mqtt_monitor.start()
