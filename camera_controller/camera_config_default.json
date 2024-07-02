@@ -5,7 +5,7 @@
     "camera_fps": 30,
     "feeder_id": "feeder01",
     "monitor_delay_startup_sec": 0,
-    "mqtt_host": "littlerascal",
+    "mqtt_host": "littlerascal.local",
     "mqtt_port": 1883,
     "mqtt_username": "camera",
     "mqtt_password": "8vSZa&#v7p1N"
