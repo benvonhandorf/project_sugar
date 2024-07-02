@@ -90,17 +90,19 @@ void halt() {
     }
 }
 
-#if FM == 2
-//FM2 is closer to the main wifi AP
+//2024-07-02 - All areas now covered by Oblivion network
 const char *WIFI_AP_NAME = "Oblivion";
 const char *WIFI_PASS = "t4unjath0mson";
 
-#else
+// #if FM == 2
 
-const char *WIFI_AP_NAME = "OblivionOD";
-const char *WIFI_PASS = "outerdarkness1!";
 
-#endif
+// #else
+
+// const char *WIFI_AP_NAME = "OblivionOD";
+// const char *WIFI_PASS = "outerdarkness1!";
+
+// #endif
 
 uint32_t reset_reason = 0;
 uint32_t reset_exception = 0;
