@@ -54,7 +54,7 @@ const char *MQTT_PASSWORD = "fln0eFi79yhK";
 const int OTA_PORT = 8267;
 const char *OTA_PASSWORD = "dlafjsdlk";
 
-const long WATCHDOG_TIMEOUT_MS = 3600000;
+const long WATCHDOG_TIMEOUT_MS = 120000;
 long watchdog_timer = WATCHDOG_TIMEOUT_MS;
 
 // HX711 constructor:
@@ -345,8 +345,6 @@ bool writeBatchInt8(const char *topic, int8_t *readings, uint16_t count,
         }
     }
     msg += "]}";
-
-    // println(msg);
 
     bool result = client.publish(topic, msg.c_str());
 
