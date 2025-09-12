@@ -8,16 +8,18 @@ all:
           systemctl: /bin/systemctl
           shutdown: /sbin/shutdown
           reboot: /sbin/reboot
-        picam[01:04]:
+        picam[01:05]:
           multiinstance: false
         picam01:
-          camera_tuning_file: ov5647
+          camera_tuning_file: imx708
         picam02:
           camera_tuning_file: imx296
         picam03:
           camera_tuning_file: ov5647_noir
         picam04:
           camera_tuning_file: imx219_noir
+        picam05:
+          camera_tuning_file: imx327
       vars:
         camera_user: camera_stream
         ansible_user: pi

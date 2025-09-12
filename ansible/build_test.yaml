@@ -1,0 +1,27 @@
+- name: Install Camera Controller
+  hosts: localhost
+  vars:
+    arch_map: 
+      "armv6l": "armv6"
+      "armv7l": "armv7"
+      "aarch64": "arm64v8"
+      "x86_64": "amd64"
+      "amd64": "amd64"
+    archive_arch: "{{ arch_map[ ansible_architecture ] }}"
+    archive_filename: "camera_controller"
+    service_name: "camera_controller"
+    username: "camera_stream"
+    group: "{{ username }}"
+    target_directory: "camera_controller"
+    description: "Camera Controller"
+  pre_tasks:
+    - name: Build deployment archive - Local
+      local_action: 
+        module: ansible.builtin.archive
+        dest: "build/{{ archive_filename }}.tar.gz"
+        path: 
+        - ../camera_controller/*.py
+        - ../camera_controller/requirements.txt
+        - ../camera_controller/camera_config_default.json
+      become: false
+      run_once: true

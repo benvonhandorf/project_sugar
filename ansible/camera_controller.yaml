@@ -1,8 +1,4 @@
 - name: Install Camera Controller
-  become: true
-  become_user: root
-  hosts: picam01, picam04
-  # hosts: camera_controllers
   vars:
     arch_map: 
       "armv6l": "armv6"
@@ -17,7 +13,7 @@
     group: "{{ username }}"
     target_directory: "camera_controller"
     description: "Camera Controller"
-  tasks:
+  pre_tasks:
     - name: Build deployment archive - Local
       local_action: 
         module: ansible.builtin.archive
@@ -26,19 +22,24 @@
         - ../camera_controller/*.py
         - ../camera_controller/requirements.txt
         - ../camera_controller/camera_config_default.json
+      become: false
       run_once: true
-    # - name: Update os packages
-    #   ansible.builtin.apt:
-    #     update_cache: yes
-    #     upgrade: yes
-    # - name: Ensure Python 3 is installed
-    #   ansible.builtin.apt:
-    #     name: python3
-    #     state: present
-    # - name: Ensure Pip 3 is installed
-    #   ansible.builtin.apt:
-    #     name: python3-pip
-    #     state: present
+  become: true
+  become_user: root
+  hosts: camera_controllers
+  tasks:
+    - name: Update os packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: yes
+    - name: Ensure Python 3 is installed
+      ansible.builtin.apt:
+        name: python3
+        state: present
+    - name: Ensure Pip 3 is installed
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
     - name: Create user
       ansible.builtin.user:
         name: "{{ username }}"
@@ -48,7 +49,7 @@
       ansible.posix.authorized_key:
         user: "{{ username }}"
         state: present
-        key: "{{ lookup('file', '../credentials/local_network_rsa.pub') }}"
+        key: "{{ lookup('file', '~/.ssh/local_network_rsa.pub') }}"
     - name: Retrieve user information
       ansible.builtin.getent:
         database: passwd
@@ -59,12 +60,15 @@
     - name: Set working_directory
       ansible.builtin.set_fact:
         working_directory: "{{ home_directory }}/{{ target_directory }}"
+    - name: Set virtual environment directory
+      ansible.builtin.set_fact:
+        venv_directory: "{{ working_directory }}/venv"
     - name: Set config
       ansible.builtin.set_fact:
         config: "{{ home_directory }}/camera_config.json"
     - name: Set exec_start
       ansible.builtin.set_fact:
-        exec_start: "/usr/bin/python3 {{ working_directory }}/camera_controller.py {{ config }}"    
+        exec_start: "{{ venv_directory }}/bin/python3 {{ working_directory }}/camera_controller.py {{ config }}"    
     - name: Create working directory
       ansible.builtin.file:
         state: directory
@@ -78,18 +82,19 @@
         owner: "{{ username }}"
         group: "{{ group }}"
         mode: 0644
-    # - name: Ensure requirements.txt are installed
-    #   ansible.builtin.pip:
-    #     state: present
-    #     requirements: "{{ working_directory }}/requirements.txt"
-    # - name: Copy default config
-    #   ansible.builtin.copy:
-    #     force: false
-    #     remote_src: true
-    #     src: "{{ working_directory }}/camera_config_default.json"
-    #     dest: "{{ home_directory }}/camera_config.json"
-    #     owner: "{{ username }}"
-    #     group: "{{ group }}"
+    - name: Ensure requirements.txt are installed
+      ansible.builtin.pip:
+        state: present
+        requirements: "{{ working_directory }}/requirements.txt"
+        virtualenv: "{{ venv_directory }}"
+    - name: Copy default config
+      ansible.builtin.copy:
+        force: false
+        remote_src: true
+        src: "{{ working_directory }}/camera_config_default.json"
+        dest: "{{ home_directory }}/camera_config.json"
+        owner: "{{ username }}"
+        group: "{{ group }}"
       when: multiinstance == False
     - name: Install sudoers file
       ansible.builtin.template:

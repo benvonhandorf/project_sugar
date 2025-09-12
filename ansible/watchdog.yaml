@@ -1,7 +1,7 @@
 - name: Configure network watchdog
   become: true
   become_user: root
-  hosts: picam01,picam02,picam03,picam04,razorcrest
+  hosts: picam01,picam02,picam03,picam04,picam05,razorcrest
   tasks:
     - name: Install watchdog
       ansible.builtin.apt:

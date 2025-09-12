@@ -255,7 +255,7 @@ paths:
     rpiCameraSharpness: 1
     # exposure mode.
     # values: normal, short, long, custom
-    rpiCameraExposure: daylight
+    rpiCameraExposure: normal
     # auto-white-balance mode.
     # values: auto, incandescent, tungsten, fluorescent, indoor, daylight, cloudy, custom
     rpiCameraAWB: auto
@@ -292,7 +292,7 @@ paths:
     # text that is printed on each frame.
     rpiCameraTextOverlay: '%Y-%m-%d %H:%M:%S'
 
-    rpiCameraTuningFile: /usr/share/libcamera/ipa/rpi/{{ camera_tuning_file }}.json
+    rpiCameraTuningFile: /usr/share/libcamera/ipa/rpi/vc4/{{ camera_tuning_file }}.json
 
     # RPi Camera 1
     # rpiCameraTuningFile: /usr/share/libcamera/ipa/rpi/ov5647.json
