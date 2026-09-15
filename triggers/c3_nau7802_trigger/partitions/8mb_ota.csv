@@ -1,0 +1,10 @@
+# 8 MB flash, A/B OTA, 1 MB LittleFS. Same shape as 4mb_ota.csv with room to grow.
+# See that file for why there is no `factory` partition.
+#
+# Name,   Type, SubType,  Offset,   Size,     Flags
+nvs,      data, nvs,      0x9000,   0x4000,
+otadata,  data, ota,      0xd000,   0x2000,
+phy_init, data, phy,      0xf000,   0x1000,
+ota_0,    app,  ota_0,    0x10000,  0x370000,
+ota_1,    app,  ota_1,    0x380000, 0x370000,
+res,      data, littlefs, 0x6F0000, 0x100000,

@@ -1,0 +1,10 @@
+# 16 MB flash, A/B OTA, 4 MB LittleFS -- room for web assets or logged data.
+# See 4mb_ota.csv for why there is no `factory` partition.
+#
+# Name,   Type, SubType,  Offset,    Size,     Flags
+nvs,      data, nvs,      0x9000,    0x4000,
+otadata,  data, ota,      0xd000,    0x2000,
+phy_init, data, phy,      0xf000,    0x1000,
+ota_0,    app,  ota_0,    0x10000,   0x5F0000,
+ota_1,    app,  ota_1,    0x600000,  0x5F0000,
+res,      data, littlefs, 0xBF0000,  0x400000,

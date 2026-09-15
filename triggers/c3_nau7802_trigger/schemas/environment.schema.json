@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/environment.schema.json",
+  "title": "Feeder environment",
+  "description": "Published on <prefix>/environment every telemetry.environment_interval_s, from the SHT4x. New in this firmware; the predecessor had no environmental sensor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["temperature_c", "humidity_pct"],
+  "properties": {
+    "ts": { "type": "integer", "description": "Epoch milliseconds, or 0 when the clock has not been set" },
+    "temperature_c": { "type": "number", "minimum": -40, "maximum": 125 },
+    "humidity_pct": {
+      "type": "number", "minimum": 0, "maximum": 100,
+      "description": "Cropped to 0-100 as the datasheet prescribes. The conversion can yield values just outside that range; publishing 100.4 %RH would let a consumer graph a rounding artefact as weather."
+    }
+  }
+}

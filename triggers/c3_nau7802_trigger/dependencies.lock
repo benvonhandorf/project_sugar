@@ -1,0 +1,265 @@
+dependencies:
+  cli:
+    component_hash: a5f0abd92fdf174fa47cb5aba3918e7bc252bf7b33a9bbbefdd03e6fbe4d6122
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: diag
+      path: diag
+      version: diag-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: cli
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  cli_web:
+    component_hash: c17d8c8bbc6f5a7f5fb1d034b590981ef16b250660925c108ca31ecbb78fa796
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: cli
+      path: cli
+      version: cli-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: diag
+      path: diag
+      version: diag-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: cli_web
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  config_store:
+    component_hash: ea578a7d14204ada91876d51ef1c701e0e3eecb134268bd0aba129b4305ee8ea
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: config_store
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  diag:
+    component_hash: 7b26adfefae0a88fe555bd0d72f8c8adb532d643d302db574533d6f1334da6f5
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: diag
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  espressif/mdns:
+    component_hash: 3ba256ac95e07c274be53cbd73f06cb846c403b61e8fbdf1be57bdb79db7a63e
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.12.0
+  espressif/mqtt:
+    component_hash: fb18bc3b65aa8c94693a9811ffc322cca8a65d92d5ec84983d3e385080e3969c
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.1.0
+  http_server:
+    component_hash: aec422cd30a2ad25352108699384e043deaf4d45ddef575ccf0a6cae45672802
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: js2c
+      path: js2c
+      version: js2c-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: net_events
+      path: net_events
+      version: net_events-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: http_server
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  idf:
+    source:
+      type: idf
+    version: 6.0.2
+  ina237:
+    component_hash: 214c060c068d5ae041031a6e2af04b20c5e2ff5a0a4ad1d9c040d39882b4f6b6
+    dependencies:
+    - name: idf
+      version: '>=5.3'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: ina237
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  joltwallet/littlefs:
+    component_hash: 3af20a3d75c49db9dc2286fd50862c34055c9f578419ad1f2bf7ed3ed01391fe
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.22.3
+  js2c:
+    component_hash: 29f3210fb356397915316e92e3008d454958d6e110fd509aecc36773bb7dd0a1
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: js2c
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  mdns_manager:
+    component_hash: 4640cfab8f7ae303eb6d8c68a998a876c733afb7c184d899c1b7c38d33c5c21d
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - name: espressif/mdns
+      version: ^1.8
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: net_events
+      path: net_events
+      version: net_events-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: mdns_manager
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  mqtt_manager:
+    component_hash: 769ccd1c120b59919a1c6cc60253cc072be687010a1514f41df093c16e4e597b
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - name: espressif/mqtt
+      version: ^1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: js2c
+      path: js2c
+      version: js2c-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: net_events
+      path: net_events
+      version: net_events-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: diag
+      path: diag
+      version: diag-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: mqtt_manager
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  nau7802:
+    component_hash: 051f2402ae90595d5697155808be25c8e57bc7b589866742d2208667e2b5c2fa
+    dependencies:
+    - name: idf
+      version: '>=5.3'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: nau7802
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  net_events:
+    component_hash: aeb8b133576349c7acf96cc8b125299bdd9f4e5d22a52d73762ea0a40544162c
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: net_events
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  ntp_manager:
+    component_hash: f853c9236c38bf6bff9d9f43afd65c5ac7cbe9d9d00925d38b75dc37474d78ca
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: js2c
+      path: js2c
+      version: js2c-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: net_events
+      path: net_events
+      version: net_events-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: ntp_manager
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  ota:
+    component_hash: d3039d5bc7c0e9637388df7cf775bab2f10425d989d77fa3e1247889662c786f
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: http_server
+      path: http_server
+      version: http_server-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: ota
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  sht4x:
+    component_hash: 70b2c82ed00b0e0554aef2b7bf753733be9a991b1d685418dfdc3ec7193cd307
+    dependencies:
+    - name: idf
+      version: '>=5.3'
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: sht4x
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+  wifi_manager:
+    component_hash: 9449ad14d2fd2476c8d0a09b1f80a6d227307982fe3156e7e79103710a2ada9b
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: js2c
+      path: js2c
+      version: js2c-v0.1.0
+    - git: https://github.com/benvonhandorf/esp_components.git
+      name: net_events
+      path: net_events
+      version: net_events-v0.1.0
+    source:
+      git: https://github.com/benvonhandorf/esp_components.git
+      path: wifi_manager
+      type: git
+    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+direct_dependencies:
+- cli
+- cli_web
+- config_store
+- diag
+- http_server
+- ina237
+- joltwallet/littlefs
+- js2c
+- mdns_manager
+- mqtt_manager
+- nau7802
+- net_events
+- ntp_manager
+- ota
+- sht4x
+- wifi_manager
+manifest_hash: 298620a6d274f7b24430423011908d4e09afe55329f7e9ce75b1ce075beaa216
+target: esp32c3
+version: 3.0.0

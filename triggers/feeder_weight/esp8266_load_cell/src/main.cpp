@@ -9,21 +9,21 @@
 #if FM == 1
 
 #define FEEDER_ID "1"
-const char *HOSTNAME = "feedermonitor01";
+const char *HOSTNAME = "feedermonitor1";
 
 float calibrationValue = -915.044983;
 
 #elif FM == 2
 
 #define FEEDER_ID "2"
-const char *HOSTNAME = "feedermonitor02";
+const char *HOSTNAME = "feedermonitor2";
 
 float calibrationValue = 953.304993;
 
 #elif FM == 3
 
 #define FEEDER_ID "3"
-const char *HOSTNAME = "feedermonitor03";
+const char *HOSTNAME = "feedermonitor3";
 
 float calibrationValue = 906.79;
 
@@ -31,6 +31,7 @@ float calibrationValue = 906.79;
 
 #ifndef FEEDER_ID
 #define FEEDER_ID "999"
+#warning "Feeder ID not set"
 #endif
 
 #define ROOT_TOPIC "sensors/feeders/"
@@ -47,7 +48,7 @@ const char *WATCHDOG_TOPIC = ROOT_TOPIC FEEDER_ID "/watchdog";
 
 bool debug_publish = false;
 
-const char *mqtt_server = "littlerascal";
+const char *mqtt_server = "sleeperservice.local";
 const char *MQTT_USER = "sensor_writer";
 const char *MQTT_PASSWORD = "fln0eFi79yhK";
 
@@ -186,7 +187,9 @@ void MQTT_callback(char* topic, byte* payload, unsigned int length) {
 
 void initMQTT_block() {
     client.setServer(mqtt_server, 1883);
-    client.setBufferSize(2048);
+    if(!client.setBufferSize(2048)) {
+        println("Unable to set buffer size");
+    }
     client.setCallback(MQTT_callback);
 
     MQTT_reconnect();

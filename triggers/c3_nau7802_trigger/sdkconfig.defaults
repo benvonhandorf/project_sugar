@@ -1,0 +1,52 @@
+# Settings shared by every target. Per-chip overrides live in
+# sdkconfig.defaults.<target>, which ESP-IDF layers on top of this file.
+#
+# sdkconfig itself is generated and gitignored. Edit this file, then
+# `idf.py reconfigure` -- editing sdkconfig directly is lost on the next
+# set-target.
+
+# --- Partition table -------------------------------------------------------
+# A/B OTA with a LittleFS partition named "res". Point this at partitions/8mb_ota.csv
+# or 16mb_ota.csv for a larger part; the flash size below has to agree.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions/4mb_ota.csv"
+
+# --- OTA rollback ----------------------------------------------------------
+# Firmware that boots and never calls ota_mark_valid() is rolled back on the next
+# reset. This is what makes an A/B layout worth having: a bad update undoes
+# itself instead of needing a cable.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# --- Console ---------------------------------------------------------------
+# The web console carries command output over a WebSocket, which
+# esp_http_server compiles out unless this is set.
+CONFIG_HTTPD_WS_SUPPORT=y
+
+# --- Networking ------------------------------------------------------------
+# ntp_manager falls back to a single server without this; esp_sntp_config_t sizes
+# its server array from it.
+CONFIG_LWIP_SNTP_MAX_SERVERS=2
+# Feeds link statistics to the status report.
+CONFIG_LWIP_STATS=y
+
+# --- Diagnostics -----------------------------------------------------------
+# Keep the panic handler talking to the console rather than silently rebooting,
+# so a crash on a bench is legible.
+CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT=y
+
+# --- MQTT ------------------------------------------------------------------
+# The outbound buffer has to hold a whole telemetry batch. telemetry.batch_max_bytes
+# defaults to 1400 and must stay under this: esp-mqtt refuses a publish larger
+# than the buffer, and the failure looks like a broker problem rather than a
+# sizing one.
+CONFIG_MQTT_BUFFER_SIZE=2048
+
+# --- Watchdogs -------------------------------------------------------------
+# The sampling task subscribes to the task watchdog and feeds it once per sample.
+# The timeout here is a floor; watchdog.hardware_s in config.json reconfigures it
+# at boot. The idle tasks are deliberately not watched: this firmware spends most
+# of its time blocked on a conversion, which is exactly what the idle watchdog
+# would call a stall.
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=30
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n

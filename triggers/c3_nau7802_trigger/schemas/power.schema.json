@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/power.schema.json",
+  "title": "Feeder trigger power draw",
+  "description": "Published on <prefix>/power every telemetry.power_interval_s, from the INA237. New in this firmware; the predecessor had no power monitor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bus_v", "current_a", "power_w", "healthy"],
+  "properties": {
+    "ts": { "type": "integer", "description": "Epoch milliseconds, or 0 when the clock has not been set" },
+    "bus_v": { "type": "number", "minimum": 0, "maximum": 85 },
+    "current_a": { "type": "number", "description": "Signed: negative is current flowing the other way through the shunt" },
+    "power_w": { "type": "number", "minimum": 0 },
+    "temperature_c": { "type": "number", "description": "The INA237 die, not the air. Compare with the SHT4x reading on /environment: a large gap is self-heating." },
+    "healthy": {
+      "type": "boolean",
+      "description": "False if the trim memory checksum failed (nothing the part reports is trustworthy) or an arithmetic overflow occurred (current and power are invalid, though bus_v is still good). It says nothing about whether the part has been reset, and cannot: the driver leaves CONFIG and ADC_CONFIG at their reset values and writes only SHUNT_CAL, whose reset value is the very constant it writes -- so a part that browns out comes back configured identically."
+    }
+  }
+}

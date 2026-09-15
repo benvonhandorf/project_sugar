@@ -1,0 +1,73 @@
+{
+  "config_version": 1,
+  "device_name": "feedermonitor3",
+  "instance_name": "Hummingbird feeder 3",
+  "feeder_id": 3,
+
+  "wifi": {
+    "hostname": "feedermonitor3",
+    "known_networks": [
+      { "ssid": "your-network", "password": "your-passphrase", "priority": 10 }
+    ],
+    "ap_ssid": "feeder-setup",
+    "ap_password": "configure-me",
+    "reachability_host": ""
+  },
+
+  "mqtt": {
+    "uri": "mqtt://sleeperservice.local:1883",
+    "username": "sensor_writer",
+    "password": "rotate-me",
+    "topic_prefix": "sensors/feeders/3",
+    "lwt_suffix": "online",
+    "lwt_online": "1",
+    "lwt_offline": "0"
+  },
+
+  "ntp": {
+    "server": "pool.ntp.org",
+    "timezone": "UTC0"
+  },
+
+  "http": {
+    "port": 80,
+    "require_auth": true,
+    "username": "admin",
+    "password": "change-me"
+  },
+
+  "board": {
+    "i2c_sda": 5,
+    "i2c_scl": 6,
+    "nau7802_drdy": 7,
+    "sht4x_address": 68,
+    "ina237_address": 64
+  },
+
+  "loadcell": {
+    "rate_sps": 10,
+    "gain": 128,
+    "calibration_factor": 1125.0
+  },
+
+  "trigger": {
+    "min_g": 1.75,
+    "max_g": 40.0,
+    "hysteresis_g": 1.25
+  },
+
+  "telemetry": {
+    "batch_entries": 256,
+    "environment_interval_s": 60,
+    "power_interval_s": 60
+  },
+
+  "power": {
+    "shunt_ohms": 0.01
+  },
+
+  "watchdog": {
+    "external_ms": 120000,
+    "arm_on_first_message": true
+  }
+}

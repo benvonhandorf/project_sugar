@@ -1,0 +1,270 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "app_config",
+  "title": "Hummingbird feeder weight trigger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["config_version", "wifi", "mqtt", "ntp", "http"],
+  "properties": {
+    "config_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1,
+      "description": "Format version this firmware accepts. Raise the maximum when the firmware learns a newer layout; the check is generated, so it cannot be forgotten."
+    },
+    "device_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 31,
+      "default": "feeder-trigger",
+      "description": "Identifies this unit: the mDNS hostname, the MQTT client id, and the substitution for $DEVICE$ in the MQTT topic prefix."
+    },
+    "instance_name": {
+      "type": "string",
+      "maxLength": 63,
+      "default": "",
+      "description": "Human-readable name shown by mDNS browsers"
+    },
+    "feeder_id": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 999,
+      "js2cType": "uint16_t",
+      "default": 0,
+      "description": "Which feeder this device is bolted to. 0 means unprovisioned: the device boots, joins the network and answers the console, but publishes no measurement topics and says so loudly on every status. It is deliberately not a silent fallback -- the predecessor's fallback of 999 produced a device that published to a topic nobody watched."
+    },
+
+    "wifi": { "$ref": "wifi_manager/wifi_manager_config_schema.json" },
+    "mqtt": { "$ref": "mqtt_manager/mqtt_manager_config_schema.json" },
+    "ntp":  { "$ref": "ntp_manager/ntp_manager_config_schema.json" },
+    "http": { "$ref": "http_server/http_server_config_schema.json" },
+
+    "board": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the parts are wired. Pin numbers are a fact about the board, not about any driver, so they live here rather than in a header.",
+      "properties": {
+        "i2c_sda": {
+          "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
+          "default": 5,
+          "description": "I2C data pin. Every part on this board is on it: the NAU7802 at 0x2A, the SHT4x, and the INA237. -1 disables the bus and with it all three."
+        },
+        "i2c_scl": {
+          "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
+          "default": 6,
+          "description": "I2C clock pin"
+        },
+        "i2c_hz": {
+          "type": "integer", "minimum": 10000, "maximum": 1000000, "js2cType": "uint32_t",
+          "default": 100000,
+          "description": "I2C bus speed. The NAU7802 is specified to 400 kHz; 100 kHz is the safe default for a sensor on a flying lead."
+        },
+        "nau7802_drdy": {
+          "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
+          "default": 7,
+          "description": "GPIO the NAU7802's DRDY output is wired to, or -1 to poll PU_CTRL.CR over I2C instead. Wire it if you can: polling runs on the FreeRTOS tick, so a result read can land exactly as the device rewrites its registers and stitch one reading out of two conversions. Near zero that is a huge outlier; anywhere else it passes for noise."
+        },
+        "sht4x_address": {
+          "type": "integer", "minimum": 68, "maximum": 70, "js2cType": "uint8_t",
+          "default": 68,
+          "description": "0x44, 0x45 or 0x46 as decimal. The variant fitted decides it; there are no address pins, so the address is a fact about which part was fitted rather than how it was strapped. Note the overlap with the INA237's range: 0x44-0x46 are legal for both parts, and two devices answering one address is a fault the firmware refuses to start on rather than diagnose later."
+        },
+        "ina237_address": {
+          "type": "integer", "minimum": 64, "maximum": 79, "js2cType": "uint8_t",
+          "default": 64,
+          "description": "0x40 to 0x4F as decimal, selected by the A0/A1 pins (Table 7-2)."
+        }
+      }
+    },
+
+    "loadcell": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The NAU7802 front end and the filter chain on top of it. The defaults reproduce the response of the HX711-based predecessor: an 18-deep trimmed sliding mean inside the amplifier driver, and a 5-deep average of that in the application.",
+      "properties": {
+        "rate_sps": {
+          "type": "integer", "minimum": 10, "maximum": 320, "js2cType": "uint16_t",
+          "default": 10,
+          "description": "Conversion rate: 10, 20, 40, 80 or 320. 10 matches the predecessor exactly, which is what makes its empirically tuned trigger thresholds transferable. One sample costs average_samples conversions of wall time, so the sample rate is rate_sps / average_samples."
+        },
+        "gain": {
+          "type": "integer", "minimum": 1, "maximum": 128, "js2cType": "uint8_t",
+          "default": 128,
+          "description": "PGA gain: 1, 2, 4, 8, 16, 32, 64 or 128. A load cell bridge at 2 mV/V needs the top of this range; a gain left at 1 puts the signal among the noise while still producing plausible numbers."
+        },
+        "internal_ldo": {
+          "type": "boolean",
+          "default": true,
+          "description": "Power the bridge from the NAU7802's own regulator. False leaves AVDD taken from the pin, which is the chip default -- switching the regulator on while the board already drives AVDD would put two sources on one net."
+        },
+        "ldo_mv": {
+          "type": "integer", "minimum": 2400, "maximum": 4500, "js2cType": "uint16_t",
+          "default": 3300,
+          "description": "Internal regulator output: 2400, 2700, 3000, 3300, 3600, 3900, 4200 or 4500 mV"
+        },
+        "calibration_factor": {
+          "type": "number",
+          "default": 1125.0,
+          "description": "Counts per gram, at this gain. Negative is legitimate and inverts the sign for a cell wired the other way round -- do not take the absolute value. A factor measured by 'scale calibrate' is stored in NVS and wins over this one; this is the factory default a device falls back to."
+        },
+        "tare_counts": {
+          "type": "number",
+          "default": 0.0,
+          "description": "The unloaded zero, in raw counts. Persisted in NVS by 'scale tare' and restored at boot, so reported weights are absolute feeder mass rather than a change relative to whenever the device last rebooted. The predecessor re-tared at every boot with the feeder in place, which silently redefined zero on every reset."
+        },
+        "tare_on_boot": {
+          "type": "boolean",
+          "default": false,
+          "description": "Re-tare at boot with whatever is on the cell, discarding the stored zero. This reproduces the predecessor's behaviour and is almost never what you want: it makes weights incomparable across a reboot and makes syrup consumption unmeasurable."
+        },
+        "window_conversions": {
+          "type": "integer", "minimum": 1, "maximum": 64, "js2cType": "uint8_t",
+          "default": 18,
+          "description": "Depth of the sliding window the trimmed mean runs over"
+        },
+        "trim_high": {
+          "type": "integer", "minimum": 0, "maximum": 8, "js2cType": "uint8_t",
+          "default": 1,
+          "description": "Highest values discarded from each window before averaging"
+        },
+        "trim_low": {
+          "type": "integer", "minimum": 0, "maximum": 8, "js2cType": "uint8_t",
+          "default": 1,
+          "description": "Lowest values discarded from each window before averaging"
+        },
+        "average_samples": {
+          "type": "integer", "minimum": 1, "maximum": 32, "js2cType": "uint8_t",
+          "default": 5,
+          "description": "Trimmed-mean outputs averaged into one sample, one per new conversion. Because the window slides, these overlap heavily: one sample is not an independent 90-conversion average, and its settling time is about 22 conversions. A reimplementation that simply averaged 90 conversions would be measurably slower and would miss short landings."
+        },
+        "baseline_samples": {
+          "type": "integer", "minimum": 1, "maximum": 64, "js2cType": "uint8_t",
+          "default": 5,
+          "description": "Samples averaged to establish the startup baseline, and to re-establish it after a re-baseline"
+        },
+        "startup_timeout_ms": {
+          "type": "integer", "minimum": 500, "maximum": 60000, "js2cType": "uint32_t",
+          "default": 5000,
+          "description": "How long to wait for the converter to produce conversions before declaring a sensor fault. The predecessor called an infinite delay loop here, which reported nothing and never recovered."
+        }
+      }
+    },
+
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Landing detection. These thresholds were tuned empirically against the previous mechanical arrangement; a different cell, mounting or noise floor means re-tuning them against recorded raw_batch data rather than carrying them over.",
+      "properties": {
+        "min_g": {
+          "type": "number", "default": 1.75,
+          "description": "Below this change from the baseline, not a bird. Against a hummingbird mass of 3-6 g this implies partial weight transfer -- perching while still hovering."
+        },
+        "max_g": {
+          "type": "number", "default": 40.0,
+          "description": "Above this, not a bird: a refill, or the feeder being knocked"
+        },
+        "hysteresis_g": {
+          "type": "number", "default": 1.25,
+          "description": "The settled band. The weight must fall back inside it for a trigger to clear, and only inside it does the baseline move."
+        },
+        "reset_interval_samples": {
+          "type": "integer", "minimum": 1, "maximum": 65535, "js2cType": "uint16_t",
+          "default": 100,
+          "description": "Cap on a single continuous trigger. Once this many samples have elapsed the trigger branch stops re-arming for the rest of the event; the trigger stays asserted and still clears only when the weight settles."
+        },
+        "baseline_alpha": {
+          "type": "number", "default": 0.1,
+          "description": "Weight given to a new settled sample: baseline := (1-alpha)*baseline + alpha*sample. The baseline is frozen on any iteration that is not settled, deliberately, so a feeding bird is never absorbed into it."
+        },
+        "average_every": {
+          "type": "integer", "minimum": 1, "maximum": 65535, "js2cType": "uint16_t",
+          "default": 20,
+          "description": "Publish the baseline to 'average' on every Nth loop iteration. The counter advances every iteration but the publish only happens on a settled one, so these are irregular and are skipped entirely during activity."
+        },
+        "rebaseline_after_s": {
+          "type": "integer", "minimum": 0, "maximum": 86400, "js2cType": "uint32_t",
+          "default": 300,
+          "description": "Re-acquire the baseline after this long continuously outside the settled band, clearing any asserted trigger. 0 disables it, which reproduces the predecessor's lockup: a refill freezes the baseline permanently and only a reboot recovers."
+        }
+      }
+    },
+
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What gets published, how often, and how much of it fits in one message",
+      "properties": {
+        "batch_entries": {
+          "type": "integer", "minimum": 1, "maximum": 4096, "js2cType": "uint16_t",
+          "default": 256,
+          "description": "Entries in one published batch. This is the count actually published: the predecessor flushed when the buffer *exceeded* its batch size and so published 257, which is corrected here rather than reproduced."
+        },
+        "batch_max_bytes": {
+          "type": "integer", "minimum": 128, "maximum": 8192, "js2cType": "uint16_t",
+          "default": 1400,
+          "description": "Flush early if the serialised payload would exceed this. The predecessor fixed the count against a 2048-byte buffer and failed intermittently once readings needed a third integer digit; sizing by payload is what makes that impossible rather than merely unlikely. Must stay under the MQTT client's outbound buffer (CONFIG_MQTT_BUFFER_SIZE)."
+        },
+        "batch_drop_entries": {
+          "type": "integer", "minimum": 1, "maximum": 16384, "js2cType": "uint16_t",
+          "default": 1024,
+          "description": "Discard the buffer once it holds this many entries, whatever the publish did. Bounds both memory and staleness when the broker is unreachable for a long time."
+        },
+        "environment_interval_s": {
+          "type": "integer", "minimum": 0, "maximum": 86400, "js2cType": "uint32_t",
+          "default": 60,
+          "description": "How often to read and publish the SHT4x. 0 disables it."
+        },
+        "power_interval_s": {
+          "type": "integer", "minimum": 0, "maximum": 86400, "js2cType": "uint32_t",
+          "default": 60,
+          "description": "How often to read and publish the INA237. 0 disables it."
+        },
+        "status_interval_s": {
+          "type": "integer", "minimum": 5, "maximum": 86400, "js2cType": "uint32_t",
+          "default": 60,
+          "description": "How often to publish the retained status message"
+        },
+        "debug_echo": {
+          "type": "boolean",
+          "default": false,
+          "description": "Mirror every console line to the 'message' topic. Off by default; the publish path guards against re-entry, so a failure inside the echo cannot try to publish about itself."
+        }
+      }
+    },
+
+    "power": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The INA237 and the shunt it measures across. Only the shunt is configurable: the driver writes SHUNT_CAL and nothing else, leaving the ADC range and averaging at the reset values the datasheet's own design example prescribes.",
+      "properties": {
+        "shunt_ohms": {
+          "type": "number", "default": 0.01,
+          "description": "The resistor actually fitted, in ohms. The part measures a voltage across something it knows nothing about, so there is no discoverable default and getting this wrong scales every current and power reading without anything looking amiss."
+        }
+      }
+    },
+
+    "watchdog": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Two watchdogs with different jobs: one catches firmware that has stopped running, the other catches firmware that is running and useless.",
+      "properties": {
+        "hardware_s": {
+          "type": "integer", "minimum": 0, "maximum": 300, "js2cType": "uint16_t",
+          "default": 30,
+          "description": "Task watchdog timeout. The sampling task subscribes and feeds it, so a blocked conversion loop resets the device. 0 disables it."
+        },
+        "external_ms": {
+          "type": "integer", "minimum": 0, "maximum": 3600000, "js2cType": "uint32_t",
+          "default": 120000,
+          "description": "Countdown reset by any message on the 'watchdog' topic; on reaching zero the device restarts. This is how an external supervisor recovers a device that is connected but not working. 0 disables it."
+        },
+        "arm_on_first_message": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the countdown only once a watchdog message has actually arrived, so a device deployed without a supervisor is not rebooted every two minutes by a timer nothing feeds. That is precisely what happened to the predecessor: it counted down from boot and subscribed only to 'control', so the message that would have reset the countdown was never delivered."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,82 @@
+dependencies:
+  # LittleFS backs the configuration partition. The application mounts it;
+  # config_store deliberately takes paths and mounts nothing itself.
+  joltwallet/littlefs: "^1.20"
+
+  # The shared components, each pinned to a tag in the esp_components repository.
+  # Only what this project uses directly is listed: each component names its own
+  # siblings, so cli brings diag, ota brings http_server, and the managers bring
+  # js2c and net_events without this file having to know that.
+  #
+  # `version` is a git ref, not a semver range -- the component manager checks out
+  # exactly this tag. Upgrading one component is editing one line here; nothing
+  # else in the project changes, because components are found by name.
+  #
+  # To work on a component and this project at the same time, point the build at a
+  # checkout instead: a local component of the same name wins over the fetched one.
+  #
+  #     idf.py -DESP_COMPONENTS_DIR=../esp_components build
+  #
+  cli:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: cli
+    version: cli-v0.1.0
+
+  # The parts on this board. Each is a driver over a caller-owned bus handle;
+  # main/board.c is the only file that knows which bus each one is on.
+  ina237:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: ina237
+    version: ina237-v0.1.0
+  nau7802:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: nau7802
+    version: nau7802-v0.2.0
+  sht4x:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: sht4x
+    version: sht4x-v0.1.0
+  cli_web:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: cli_web
+    version: cli_web-v0.1.0
+  config_store:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: config_store
+    version: config_store-v0.1.0
+  diag:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: diag
+    version: diag-v0.1.0
+  http_server:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: http_server
+    version: http_server-v0.1.0
+  js2c:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: js2c
+    version: js2c-v0.1.0
+  mdns_manager:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: mdns_manager
+    version: mdns_manager-v0.1.0
+  mqtt_manager:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: mqtt_manager
+    version: mqtt_manager-v0.1.0
+  net_events:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: net_events
+    version: net_events-v0.1.0
+  ntp_manager:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: ntp_manager
+    version: ntp_manager-v0.1.0
+  ota:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: ota
+    version: ota-v0.1.0
+  wifi_manager:
+    git: https://github.com/benvonhandorf/esp_components.git
+    path: wifi_manager
+    version: wifi_manager-v0.1.0

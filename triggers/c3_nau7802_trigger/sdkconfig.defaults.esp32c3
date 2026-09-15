@@ -1,0 +1,11 @@
+# ESP32-C3. Also has USB-Serial-JTAG. A secondary console is output-only and
+# would never receive keystrokes, so the shell would appear to ignore input.
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# The load cell task, the sensor task, the watchdog task, MQTT and the HTTP
+# server all coexist on one core here, so the main task's stack is the one that
+# has to hold app_main's 4 kB configuration buffer.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=5120

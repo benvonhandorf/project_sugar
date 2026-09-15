@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/status.schema.json",
+  "title": "Feeder trigger status",
+  "description": "Retained on <prefix>/status, republished every telemetry.status_interval_s. A flat object of scalars: that is the shape that survives being graphed, alerted on and diffed. It replaces two retained topics the predecessor published separately -- a bare 'online'/'offline' string on /status and a bare integer reset code on /reset. See docs/message_changes.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["firmware", "version", "feeder_id", "provisioned", "uptime_s", "reset_reason"],
+  "properties": {
+    "ts": { "type": "integer", "description": "Epoch milliseconds, or 0 when the clock has not been set by NTP. Zero rather than a plausible 1970 date: a consumer can drop a zero, but it cannot detect a decades-old timestamp it has already graphed." },
+    "firmware": { "type": "string", "description": "The project name the image was built under. OTA refuses an image whose name differs, so this is also what an update has to match." },
+    "version": { "type": "string" },
+    "feeder_id": { "type": "integer", "minimum": 0, "maximum": 999 },
+    "provisioned": { "type": "boolean", "description": "False when feeder_id is 0. An unprovisioned device joins the network and answers the console but publishes no measurements." },
+    "uptime_s": { "type": "integer", "minimum": 0 },
+    "reset_reason": {
+      "type": "string",
+      "enum": ["unknown", "poweron", "external", "software", "panic", "interrupt-watchdog", "task-watchdog", "other-watchdog", "deepsleep", "brownout", "sdio", "other"],
+      "description": "Why the device last restarted. A word rather than the platform's integer code, which needed the vendor header to read."
+    },
+    "heap_free": { "type": "integer", "minimum": 0 },
+    "heap_min": { "type": "integer", "minimum": 0, "description": "The low-water mark since boot. A steadily falling value is a leak; heap_free alone is too noisy to show one." },
+    "ip": { "type": "string" },
+    "rssi": { "type": "integer", "description": "dBm, 0 when not associated" },
+    "mqtt": { "type": "boolean" },
+    "time_synced": { "type": "boolean" },
+
+    "loadcell": { "$ref": "#/definitions/part_state" },
+    "sht4x": { "$ref": "#/definitions/part_state" },
+    "ina237": { "$ref": "#/definitions/part_state" },
+
+    "sensor_ok": { "type": "boolean", "description": "The most recent conversion attempt succeeded" },
+    "initialized": { "type": "boolean", "description": "The startup baseline has been acquired. No trigger can be asserted before this." },
+    "triggered": { "type": "boolean" },
+    "weight_g": { "type": "number", "description": "The most recent sample, absolute feeder mass" },
+    "baseline_g": { "type": "number" },
+    "delta_g": { "type": "number", "description": "abs(baseline - weight) for the most recent sample" },
+    "counts_per_gram": { "type": "number", "description": "The calibration factor in force. May be negative for a cell wired in the opposite polarity." },
+    "tare_counts": { "type": "number" },
+    "calibration_source": { "type": "string", "enum": ["measured", "configured"], "description": "'measured' means a tare or factor from NVS is in force; 'configured' means the config.json defaults are." },
+    "sample_rate_hz": { "type": "number", "description": "loadcell.rate_sps divided by loadcell.average_samples. Consumers reconstructing per-sample times from a raw_batch duration should prefer the duration; this is what the device believes it is doing." },
+    "samples": { "type": "integer", "minimum": 0, "description": "Loop iterations since boot" },
+    "triggers": { "type": "integer", "minimum": 0 },
+    "rebaselines": { "type": "integer", "minimum": 0, "description": "How many times the baseline was re-acquired after a long excursion. A rising count means the feeder is being refilled, knocked, or drifting." },
+    "sensor_faults": { "type": "integer", "minimum": 0 },
+    "settled_ago_ms": { "type": "integer", "description": "Milliseconds since the last settled sample; -1 before the baseline is acquired. Approaching trigger.rebaseline_after_s means a re-baseline is imminent." },
+
+    "temperature_c": { "type": "number", "description": "Last SHT4x reading; 0 when sht4x is not 'ok'" },
+    "humidity_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+    "bus_v": { "type": "number" },
+    "current_a": { "type": "number" },
+    "power_w": { "type": "number" },
+    "power_healthy": { "type": "boolean", "description": "The INA237's trim memory checksum is good and no arithmetic overflow occurred. It deliberately says nothing about whether the part has been reset: the driver writes only SHUNT_CAL, and the value it writes is that register's own reset value, so a reset part comes back configured exactly as this firmware configured it." },
+
+    "watchdog_armed": { "type": "boolean" },
+    "watchdog_remaining_ms": { "type": "integer", "description": "-1 when disarmed or disabled" },
+    "watchdog_pings": { "type": "integer", "minimum": 0 }
+  },
+  "definitions": {
+    "part_state": {
+      "type": "string",
+      "enum": ["ok", "failed", "not-tried"],
+      "description": "'not-tried' means the bus the part is on was disabled in the board configuration"
+    }
+  }
+}

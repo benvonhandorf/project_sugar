@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/batch.schema.json",
+  "title": "Telemetry batch",
+  "description": "The shape of both <prefix>/raw_batch (weight samples, grams) and <prefix>/rssi_batch (link RSSI, dBm). One entry per sampling loop iteration, so the two describe the same stretch of time -- but each batch is flushed and retried independently, so their counts need not match.\n\nQoS 0: a publish that succeeds reached the transport, not the broker. Consumers must tolerate gaps, and `ts`/`duration_ms` rather than arrival order are the source of timing truth.\n\nA batch is flushed when either telemetry.batch_entries is reached or the next value would push the payload past telemetry.batch_max_bytes, whichever comes first.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["duration_ms", "count", "unit", "data"],
+  "properties": {
+    "ts": {
+      "type": "integer",
+      "description": "Epoch milliseconds at which the FIRST entry of this batch was appended. Absent when the clock had not been set at that moment -- which is why it is absent rather than zero here: a consumer keying on it should skip the message, not place it in 1970."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Milliseconds from the first entry to the publish attempt. Divide by `count` to reconstruct per-sample times. Retained for consumers written against the predecessor, which published this and no absolute time at all."
+    },
+    "count": { "type": "integer", "minimum": 1, "description": "Entries in `data`. Always equal to data.length; carried so a truncated message is detectable." },
+    "unit": { "type": "string", "enum": ["g", "dBm"] },
+    "data": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "number" },
+      "description": "Weight samples to three decimal places, or RSSI as signed integers"
+    }
+  }
+}

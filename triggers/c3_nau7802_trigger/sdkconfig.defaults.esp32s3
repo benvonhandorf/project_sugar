@@ -1,0 +1,6 @@
+# ESP32-S3. Native USB-Serial-JTAG, so the console is on the USB port and there
+# is no secondary output to confuse a terminal.
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
