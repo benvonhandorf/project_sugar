@@ -48,6 +48,35 @@ static esp_err_t init_nvs(void)
     return err;
 }
 
+/* Starts the web console once http_server actually has a listener, and only
+ * once: NET_EVENT_LINK_UP fires again on every reconnect, but cli_web_start()
+ * must run exactly once against the server http_server created on the first
+ * one. */
+static void start_web_console(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    (void)arg; (void)base; (void)data;
+
+    static bool started = false;
+    if (started) {
+        return;
+    }
+
+    httpd_handle_t server = http_server_handle();
+    if (((net_event_id_t)id != NET_EVENT_LINK_UP && (net_event_id_t)id != NET_EVENT_AP_STARTED) ||
+        !server) {
+        return;
+    }
+
+    const cli_web_config_t web = {
+        .server = server,
+        .page_uri = "/",
+        .ws_uri = "/ws",
+        .serve_page = true,
+    };
+    ESP_ERROR_CHECK(cli_web_start(&web));
+    started = true;
+}
+
 void app_main(void)
 {
     /*
@@ -174,14 +203,15 @@ void app_main(void)
          * serve an unauthenticated management interface. */
         ESP_LOGE(TAG, "HTTP server not started: %s", esp_err_to_name(http_err));
     } else {
-        /* One server, not two: the web console shares it. */
-        const cli_web_config_t web = {
-            .server = http_server_handle(),
-            .page_uri = "/",
-            .ws_uri = "/ws",
-            .serve_page = true,
-        };
-        ESP_ERROR_CHECK(cli_web_start(&web));
+        /* One server, not two: the web console shares it. But http_server_start()
+         * only registers for NET_EVENT and does not listen yet -- http_server_handle()
+         * is still NULL here. Starting cli_web now with a NULL handle would make it
+         * open its own httpd on port 80, and that second listener is what then made
+         * http_server's own, real listen() fail with "address in use" once the link
+         * actually came up. Defer to the same event http_server itself listens for,
+         * registering after it so its handle is already populated when this runs. */
+        ESP_ERROR_CHECK(esp_event_handler_register(NET_EVENT, ESP_EVENT_ANY_ID,
+                                                    &start_web_console, NULL));
 
         static const mdns_manager_service_t http_service = {
             .type = "_http", .proto = "_tcp", .port = 80,
