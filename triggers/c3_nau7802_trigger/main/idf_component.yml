@@ -79,4 +79,4 @@ dependencies:
   wifi_manager:
     git: https://github.com/benvonhandorf/esp_components.git
     path: wifi_manager
-    version: wifi_manager-v0.1.0
+    version: wifi_manager-v0.2.1
