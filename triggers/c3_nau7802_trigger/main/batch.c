@@ -7,7 +7,7 @@
 #include "app_time.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "mqtt_manager.h"
+#include "publish_queue.h"
 
 static const char *TAG = "batch";
 
@@ -126,11 +126,14 @@ esp_err_t batch_flush(batch_t *b)
     const size_t total = (size_t)prefix_len + b->len + SUFFIX_LEN;
 
     /*
-     * QoS 0: a "successful" publish means the message reached the transport,
-     * not the broker. Consumers must tolerate gaps, which is why the timestamp
-     * and not the arrival order is the source of timing truth.
+     * QoS 0: a "successful" send means the message was handed to the
+     * publisher task, not that it reached the broker. Consumers must tolerate
+     * gaps, which is why the timestamp and not the arrival order is the
+     * source of timing truth. Queued rather than published directly so a
+     * client mid-reconnect cannot stall the sampling task this is called
+     * from -- see publish_queue.h.
      */
-    esp_err_t err = mqtt_manager_publish(b->topic, start, total, 0, false);
+    esp_err_t err = publish_queue_send(b->topic, start, total, 0, false);
     if (err != ESP_OK) {
         b->publish_failures++;
         /*

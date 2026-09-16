@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#include "mqtt_manager.h"
+#include "publish_queue.h"
 #include "scale_store.h"
 #include "trigger.h"
 #include "wifi_manager.h"
@@ -138,9 +138,10 @@ static void publish_message(const char *fmt, ...)
     va_end(args);
 
     diag_printf("%s\n", text);
-    /* Fire and forget: a device that cannot reach the broker must not stall its
-     * sampling loop saying so. */
-    mqtt_manager_publish(TOPIC_MESSAGE, text, strlen(text), 0, false);
+    /* Fire and forget: a device that cannot reach the broker -- or whose
+     * client is mid-reconnect -- must not stall its sampling loop saying so.
+     * publish_queue_send() only ever copies and hands off; see its header. */
+    publish_queue_send(TOPIC_MESSAGE, text, strlen(text), 0, false);
 }
 
 static void publish_trigger(bool asserted, double delta, double weight, double baseline)
@@ -165,7 +166,7 @@ static void publish_trigger(bool asserted, double delta, double weight, double b
     if (n < 0 || (size_t)n >= sizeof(payload)) {
         return;
     }
-    mqtt_manager_publish(TOPIC_TRIGGER, payload, (size_t)n, 0, false);
+    publish_queue_send(TOPIC_TRIGGER, payload, (size_t)n, 0, false);
 }
 
 static void publish_average(double baseline)
@@ -177,7 +178,7 @@ static void publish_average(double baseline)
     if (n < 0 || (size_t)n >= sizeof(payload)) {
         return;
     }
-    mqtt_manager_publish(TOPIC_AVERAGE, payload, (size_t)n, 0, false);
+    publish_queue_send(TOPIC_AVERAGE, payload, (size_t)n, 0, false);
 }
 
 /* ------------------------------------------------------------ acquisition */
@@ -210,6 +211,21 @@ static esp_err_t acquire_sample(double *out_counts)
     int taken = 0;
 
     while (taken < lc->average_samples) {
+        /*
+         * Each nau7802_read_raw() is a legitimate blocking wait for DRDY,
+         * individually bounded well inside the task watchdog -- but a
+         * baseline or rebaseline needs dozens of them, and dozens of slightly
+         * slow conversions can add up past the watchdog with no single call
+         * ever exceeding it. nau7802_read_average() (the driver's own
+         * multi-conversion path, used by tare and calibrate) resets the
+         * watchdog every iteration for exactly this reason; this loop calls
+         * the same single-conversion primitive just as many times and needs
+         * the same treatment.
+         */
+        if (s_cfg.watchdog.hardware_s > 0) {
+            esp_task_wdt_reset();
+        }
+
         int32_t raw = 0;
         esp_err_t err = nau7802_read_raw(board_loadcell(), &raw);
         if (err != ESP_OK) {
@@ -695,10 +711,18 @@ esp_err_t weight_start(const app_config_t *cfg)
              s_state.tare_counts, stored.tare_stored ? "measured" : "configured",
              s_state.sample_rate_hz);
 
-    esp_err_t err = batch_init(&s_weight_batch, TOPIC_RAW_BATCH, "g",
-                               cfg->telemetry.batch_entries,
-                               cfg->telemetry.batch_max_bytes,
-                               cfg->telemetry.batch_drop_entries);
+    /* Before anything that might publish: sample_task's first act after
+     * acquiring the startup baseline is publish_trigger(), and that must
+     * never reach mqtt_manager_publish() directly -- see publish_queue.h. */
+    esp_err_t err = publish_queue_start();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = batch_init(&s_weight_batch, TOPIC_RAW_BATCH, "g",
+                     cfg->telemetry.batch_entries,
+                     cfg->telemetry.batch_max_bytes,
+                     cfg->telemetry.batch_drop_entries);
     if (err != ESP_OK) {
         return err;
     }

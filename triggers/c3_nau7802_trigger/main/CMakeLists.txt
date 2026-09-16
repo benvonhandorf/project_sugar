@@ -24,6 +24,7 @@ idf_component_register(
                  "app_time.c"
                  "batch.c"
                  "board.c"
+                 "publish_queue.c"
                  "scale_store.c"
                  "sensors.c"
                  "trigger.c"
