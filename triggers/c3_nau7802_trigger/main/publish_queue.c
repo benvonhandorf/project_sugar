@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -34,10 +35,20 @@ static void publisher_task(void *arg)
         if (xQueueReceive(s_queue, &job, portMAX_DELAY) != pdTRUE) {
             continue;
         }
-        /* However long this takes -- a client that is mid-reconnect is not
-         * this task's problem to escalate, and nothing here feeds a task
-         * watchdog. */
-        mqtt_manager_publish(job.topic, job.data, job.len, job.qos, job.retain);
+        /* mqtt_manager_enqueue(), not mqtt_manager_publish(): the blocking
+         * publish takes the MQTT client's own API lock, and on real hardware
+         * that lock can be held by the client's network task indefinitely --
+         * not just for one slow reconnect attempt -- which wedged this task,
+         * and with it every publish in the system, permanently and
+         * silently. enqueue() only copies into the client's outbox and
+         * returns; the client's own task sends it when it gets to it. The
+         * watchdog stays as a second line of defence -- subscribed only
+         * around the call, not the idle wait above, so a legitimately quiet
+         * queue never trips it -- in case some other path into the client
+         * blocks for reasons this project's code does not control. */
+        esp_task_wdt_add(NULL);
+        mqtt_manager_enqueue(job.topic, job.data, job.len, job.qos, job.retain);
+        esp_task_wdt_delete(NULL);
         free(job.data);
     }
 }

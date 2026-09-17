@@ -10,15 +10,22 @@
  * Hands MQTT publishes to a dedicated task, for a caller that must never
  * block on one.
  *
- * mqtt_manager_publish() takes the MQTT client's own API lock, which the
- * client's network task also holds for as long as whatever it is doing that
- * iteration -- including a stalled reconnect. weight.c's sampling task
- * subscribes to the task watchdog because nothing else in it should ever
- * block for as long as one conversion; calling mqtt_manager_publish()
- * directly from there means a wedged MQTT client reboots a sensor that was
- * working fine. The publisher task below is not watchdog-subscribed, so
- * whatever the MQTT client does while it sorts itself out is its own
- * business.
+ * The publisher task below calls mqtt_manager_enqueue(), not
+ * mqtt_manager_publish(): the blocking publish takes the MQTT client's own
+ * API lock, and on real hardware that lock has been observed held by the
+ * client's network task indefinitely -- not just for one slow reconnect
+ * attempt -- which wedges whatever called it, permanently and silently.
+ * enqueue() only copies into the client's outbox and returns.
+ *
+ * weight.c's sampling task subscribes to the task watchdog because nothing
+ * else in it should ever block for as long as one conversion; calling
+ * mqtt_manager_publish() directly from there means a wedged MQTT client
+ * reboots a sensor that was working fine. The publisher task below is its
+ * own task precisely so a wedged client doesn't take anything else down with
+ * it -- and it also subscribes to the task watchdog around the enqueue call
+ * itself (see publisher_task()), as a second line of defence in case some
+ * other path into the client blocks for reasons this project's code does
+ * not control.
  */
 
 /* Idempotent: safe to call every time a caller might need the queue. */

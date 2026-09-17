@@ -15,6 +15,9 @@ How to extend this project. The shared components document themselves in
   a section.
 - [Bring-up order](bringup.md) — what `app_main()` does and why the order is what it is.
 - [Updating firmware](ota.md) — flashing, OTA, rollback, and the failure modes.
+- [WiFi and MQTT connectivity](wifi.md) — the publisher-task wedge that was fixed, what
+  a `task-watchdog` reset reason means, and the RSSI-driven reconnect churn that remains
+  an RF/placement condition rather than a bug.
 
 Keep documentation beside the code and change it in the same commit. That is the reason
 it lives in the repository rather than a wiki.
