@@ -30,6 +30,18 @@
 /* Long enough for a calibration of several hundred conversions at 10 SPS. */
 #define OP_TIMEOUT_MS 120000
 
+/*
+ * Upper bound on a tare/calibrate sample count.
+ *
+ * At the slowest configurable rate (10 SPS) this is 100 s -- comfortably
+ * inside OP_TIMEOUT_MS, so a caller that waits for the result never times out
+ * on a legitimately large request. There is no lower-level bound on `samples`
+ * otherwise: the sampling task now feeds the task watchdog for however long
+ * this takes, but an unbounded count would still tie up the load cell (and
+ * therefore triggering) for as long as it ran.
+ */
+#define MAX_OP_SAMPLES 1000
+
 /* ------------------------------------------------------------------- sys */
 
 static int cmd_sys_info(int argc, char **argv)
@@ -227,6 +239,10 @@ static int cmd_scale_tare(int argc, char **argv)
         diag_error("at least 2 samples: a single conversion has no spread");
         return -1;
     }
+    if (samples > MAX_OP_SAMPLES) {
+        diag_error("samples must be at most %d", MAX_OP_SAMPLES);
+        return -1;
+    }
 
     diag_printf("taring over %d conversions; leave the cell unloaded\n", samples);
     double counts = 0.0;
@@ -254,6 +270,10 @@ static int cmd_scale_calibrate(int argc, char **argv)
     int samples = 64;
     if (argc > 2 && cli_parse_int_arg(argv[2], &samples) < 0) {
         diag_error("samples must be a number");
+        return -1;
+    }
+    if (samples > MAX_OP_SAMPLES) {
+        diag_error("samples must be at most %d", MAX_OP_SAMPLES);
         return -1;
     }
 
