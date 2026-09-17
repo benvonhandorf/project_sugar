@@ -9,7 +9,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "mqtt_manager.h"
+#include "publish_queue.h"
 
 static const char *TAG = "sensors";
 
@@ -71,7 +71,12 @@ esp_err_t sensors_read_environment(environment_reading_t *out)
                      (long long)app_time_epoch_ms(), s_env.temperature_c,
                      s_env.humidity_pct);
     if (n > 0 && (size_t)n < sizeof(payload)) {
-        mqtt_manager_publish(TOPIC_ENVIRONMENT, payload, (size_t)n, 0, false);
+        /* Queued, not published directly: mqtt_manager_publish() blocks on the
+         * client's API lock, which its network task can hold for as long as a
+         * stalled reconnect -- and this task is not task-watchdog-subscribed,
+         * so a wedged client would hang it forever with nothing to notice.
+         * See publish_queue.h. */
+        publish_queue_send(TOPIC_ENVIRONMENT, payload, (size_t)n, 0, false);
     }
     return ESP_OK;
 }
@@ -132,7 +137,7 @@ esp_err_t sensors_read_power(power_reading_t *out)
                      s_power.power_w, s_power.temp_c,
                      s_power.healthy ? "true" : "false");
     if (n > 0 && (size_t)n < sizeof(payload)) {
-        mqtt_manager_publish(TOPIC_POWER, payload, (size_t)n, 0, false);
+        publish_queue_send(TOPIC_POWER, payload, (size_t)n, 0, false);
     }
     return ESP_OK;
 }
@@ -191,6 +196,13 @@ esp_err_t sensors_start(const app_config_t *cfg)
     if (cfg->telemetry.environment_interval_s == 0 &&
         cfg->telemetry.power_interval_s == 0) {
         ESP_LOGW(TAG, "both sensor intervals are 0; nothing will be published");
+    }
+
+    /* Idempotent; see publish_queue.h. Called here too since sensor_task must
+     * never reach mqtt_manager_publish() directly, regardless of start order. */
+    esp_err_t err = publish_queue_start();
+    if (err != ESP_OK) {
+        return err;
     }
 
     if (xTaskCreate(sensor_task, "sensors", TASK_STACK, NULL, TASK_PRIO, NULL) != pdPASS) {

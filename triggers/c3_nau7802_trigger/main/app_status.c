@@ -12,6 +12,7 @@
 #include "esp_timer.h"
 #include "mqtt_manager.h"
 #include "ntp_manager.h"
+#include "publish_queue.h"
 #include "sensors.h"
 #include "weight.h"
 #include "wifi_manager.h"
@@ -183,8 +184,13 @@ esp_err_t app_status_publish(void)
     }
 
     /* Retained, so a subscriber that connects later sees the last state rather
-     * than nothing until the next interval. */
-    return mqtt_manager_publish(STATUS_TOPIC, buf, (size_t)len, 0, true);
+     * than nothing until the next interval. Queued, not published directly:
+     * this runs on esp_timer's single shared "Tmr Svc" task, and
+     * mqtt_manager_publish() blocks on the client's API lock, which its
+     * network task can hold for as long as a stalled reconnect -- wedging
+     * every other esp_timer callback in the system along with this one. See
+     * publish_queue.h. */
+    return publish_queue_send(STATUS_TOPIC, buf, (size_t)len, 0, true);
 }
 
 static void on_timer(void *arg)
@@ -208,6 +214,13 @@ esp_err_t app_status_start(uint32_t interval_ms, uint16_t feeder_id)
 {
     if (s_timer) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Idempotent; see publish_queue.h. Called here too since app_status_publish()
+     * must never reach mqtt_manager_publish() directly, regardless of start order. */
+    esp_err_t queue_err = publish_queue_start();
+    if (queue_err != ESP_OK) {
+        return queue_err;
     }
 
     s_feeder_id = feeder_id;
