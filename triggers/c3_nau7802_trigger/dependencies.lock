@@ -1,36 +1,36 @@
 dependencies:
   cli:
-    component_hash: a5f0abd92fdf174fa47cb5aba3918e7bc252bf7b33a9bbbefdd03e6fbe4d6122
+    component_hash: f54b4f474f215cc93dde90fa594af3ff2ae4e7d759985a9fa04cdb6d277a9616
     dependencies:
     - name: idf
       version: '>=5.0'
     - git: https://github.com/benvonhandorf/esp_components.git
       name: diag
       path: diag
-      version: diag-v0.1.0
+      version: diag-v0.1.1
     source:
       git: https://github.com/benvonhandorf/esp_components.git
       path: cli
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: c1161f71dd7ade85e756daaf0296beaa8e03b18e
   cli_web:
-    component_hash: c17d8c8bbc6f5a7f5fb1d034b590981ef16b250660925c108ca31ecbb78fa796
+    component_hash: 0ef163738ac1a467e4241e3a6b6ac3a6f70e3e11e2f032f4076538481bcb69fe
     dependencies:
     - name: idf
       version: '>=5.0'
     - git: https://github.com/benvonhandorf/esp_components.git
       name: cli
       path: cli
-      version: cli-v0.1.0
+      version: cli-v0.2.1
     - git: https://github.com/benvonhandorf/esp_components.git
       name: diag
       path: diag
-      version: diag-v0.1.0
+      version: diag-v0.1.1
     source:
       git: https://github.com/benvonhandorf/esp_components.git
       path: cli_web
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: b290d7b68e2c9207aa8c51b8f03cb6bfb8daefd7
   config_store:
     component_hash: ea578a7d14204ada91876d51ef1c701e0e3eecb134268bd0aba129b4305ee8ea
     dependencies:
@@ -42,7 +42,7 @@ dependencies:
       type: git
     version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
   diag:
-    component_hash: 7b26adfefae0a88fe555bd0d72f8c8adb532d643d302db574533d6f1334da6f5
+    component_hash: 2c2a5a062b261aad7f7d65c4ae844bd8f83d5949880c4c346398f6ce0247c1e2
     dependencies:
     - name: idf
       version: '>=5.0'
@@ -50,7 +50,7 @@ dependencies:
       git: https://github.com/benvonhandorf/esp_components.git
       path: diag
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: 4d217d69e8255418d2d97dadfccf5768a4c28ffa
   espressif/mdns:
     component_hash: b679eafd0acae2066e2645bd91d073e33ca5be515e2545cd3c4e55a3e3bce3cb
     dependencies:
@@ -72,7 +72,7 @@ dependencies:
       type: service
     version: 1.1.0
   http_server:
-    component_hash: aec422cd30a2ad25352108699384e043deaf4d45ddef575ccf0a6cae45672802
+    component_hash: 6b402f4d3696f1758b1ce94a81ff3ca2f41601b35ed93f629f4a5eb49c7bcd59
     dependencies:
     - name: idf
       version: '>=5.0'
@@ -88,7 +88,7 @@ dependencies:
       git: https://github.com/benvonhandorf/esp_components.git
       path: http_server
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: 797367f3d286b6727c3793bd515dfa2928028dc5
   idf:
     source:
       type: idf
@@ -140,7 +140,7 @@ dependencies:
       type: git
     version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
   mqtt_manager:
-    component_hash: 769ccd1c120b59919a1c6cc60253cc072be687010a1514f41df093c16e4e597b
+    component_hash: a13c12b2827fea7f1b0f40dade8c77de94669d03ce56c1242371e06e65f7eccb
     dependencies:
     - name: idf
       version: '>=5.0'
@@ -157,12 +157,12 @@ dependencies:
     - git: https://github.com/benvonhandorf/esp_components.git
       name: diag
       path: diag
-      version: diag-v0.1.0
+      version: diag-v0.1.1
     source:
       git: https://github.com/benvonhandorf/esp_components.git
       path: mqtt_manager
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: 4de144e70470ed76c199925278be4ab0160c96fc
   nau7802:
     component_hash: 051f2402ae90595d5697155808be25c8e57bc7b589866742d2208667e2b5c2fa
     dependencies:
@@ -184,7 +184,7 @@ dependencies:
       type: git
     version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
   ntp_manager:
-    component_hash: f853c9236c38bf6bff9d9f43afd65c5ac7cbe9d9d00925d38b75dc37474d78ca
+    component_hash: fcc72da531bea96f3a2cfbbf1478a877b16bcb32599822b0a60bad82ba362930
     dependencies:
     - name: idf
       version: '>=5.0'
@@ -200,21 +200,21 @@ dependencies:
       git: https://github.com/benvonhandorf/esp_components.git
       path: ntp_manager
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: 4ccc94ca74775fc5b0585ed60560f345303f878c
   ota:
-    component_hash: d3039d5bc7c0e9637388df7cf775bab2f10425d989d77fa3e1247889662c786f
+    component_hash: d7a3309a39d0111124ad1d730477ed8eafad3ddb09a0473f892ae0272d25a9b9
     dependencies:
     - name: idf
       version: '>=5.0'
     - git: https://github.com/benvonhandorf/esp_components.git
       name: http_server
       path: http_server
-      version: http_server-v0.1.0
+      version: http_server-v0.2.0
     source:
       git: https://github.com/benvonhandorf/esp_components.git
       path: ota
       type: git
-    version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
+    version: 620f2c59fbfb5b7a4acc452bf1a4111be5357755
   sht4x:
     component_hash: 70b2c82ed00b0e0554aef2b7bf753733be9a991b1d685418dfdc3ec7193cd307
     dependencies:
@@ -226,7 +226,7 @@ dependencies:
       type: git
     version: c7c244b1fc67d3b590ea2b68134d6282cc37ea7f
   wifi_manager:
-    component_hash: 29e0cb1fb9b452d585d697e3ae850fa99cc2c6e7276bda57d031f02fd89a9207
+    component_hash: 7afe9a23273da7ec70d23c102a17feb056c34d2f86a75479f362fe6291e11721
     dependencies:
     - name: idf
       version: '>=5.0'
@@ -242,7 +242,7 @@ dependencies:
       git: https://github.com/benvonhandorf/esp_components.git
       path: wifi_manager
       type: git
-    version: d317dc0811f5d0da001255ecc03a7fd17fc19721
+    version: fba07e28b12833539a6067749cf4b283187efeb8
 direct_dependencies:
 - cli
 - cli_web
@@ -260,6 +260,6 @@ direct_dependencies:
 - ota
 - sht4x
 - wifi_manager
-manifest_hash: 7491c9e79f38177dfa9429a1a4e59f7ece05f34ba5757e17f4da5de83cc1337c
+manifest_hash: b9734af616898240dd4898500e8027d27cd5081f02ac5612761a7a67006283ac
 target: esp32c3
 version: 3.0.0

@@ -28,6 +28,10 @@ CONFIG_HTTPD_WS_SUPPORT=y
 CONFIG_LWIP_SNTP_MAX_SERVERS=2
 # Feeds link statistics to the status report.
 CONFIG_LWIP_STATS=y
+# 802.11k/v, so a mesh can steer the station to a better access point on the same
+# SSID. wifi_manager's `roaming` option sets the per-connection flags, but they are
+# inert without the supplicant support this compiles in.
+CONFIG_ESP_WIFI_11KV_SUPPORT=y
 
 # --- Diagnostics -----------------------------------------------------------
 # Keep the panic handler talking to the console rather than silently rebooting,

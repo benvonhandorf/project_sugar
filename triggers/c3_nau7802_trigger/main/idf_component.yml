@@ -20,7 +20,7 @@ dependencies:
   cli:
     git: https://github.com/benvonhandorf/esp_components.git
     path: cli
-    version: cli-v0.1.0
+    version: cli-v0.2.1
 
   # The parts on this board. Each is a driver over a caller-owned bus handle;
   # main/board.c is the only file that knows which bus each one is on.
@@ -39,7 +39,7 @@ dependencies:
   cli_web:
     git: https://github.com/benvonhandorf/esp_components.git
     path: cli_web
-    version: cli_web-v0.1.0
+    version: cli_web-v0.2.2
   config_store:
     git: https://github.com/benvonhandorf/esp_components.git
     path: config_store
@@ -47,11 +47,11 @@ dependencies:
   diag:
     git: https://github.com/benvonhandorf/esp_components.git
     path: diag
-    version: diag-v0.1.0
+    version: diag-v0.1.1
   http_server:
     git: https://github.com/benvonhandorf/esp_components.git
     path: http_server
-    version: http_server-v0.1.0
+    version: http_server-v0.2.0
   js2c:
     git: https://github.com/benvonhandorf/esp_components.git
     path: js2c
@@ -63,7 +63,7 @@ dependencies:
   mqtt_manager:
     git: https://github.com/benvonhandorf/esp_components.git
     path: mqtt_manager
-    version: mqtt_manager-v0.1.0
+    version: mqtt_manager-v0.1.2
   net_events:
     git: https://github.com/benvonhandorf/esp_components.git
     path: net_events
@@ -71,12 +71,12 @@ dependencies:
   ntp_manager:
     git: https://github.com/benvonhandorf/esp_components.git
     path: ntp_manager
-    version: ntp_manager-v0.1.0
+    version: ntp_manager-v0.1.1
   ota:
     git: https://github.com/benvonhandorf/esp_components.git
     path: ota
-    version: ota-v0.1.0
+    version: ota-v0.1.1
   wifi_manager:
     git: https://github.com/benvonhandorf/esp_components.git
     path: wifi_manager
-    version: wifi_manager-v0.2.1
+    version: wifi_manager-v0.3.0
