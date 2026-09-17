@@ -11,6 +11,7 @@
 #include "diag.h"
 #include "esp_app_desc.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "mqtt_manager.h"
 #include "ota.h"
 #include "sensors.h"
@@ -135,6 +136,24 @@ static int cmd_net_status(int argc, char **argv)
 
     diag_printf("wifi:  state %d, ip %s, rssi %d\n",
                 (int)wifi_manager_get_state(), ip[0] ? ip : "-", rssi);
+
+    wifi_manager_link_info_t link;
+    wifi_manager_get_link_info(&link);
+    if (link.connected) {
+        diag_printf("       ap %02x:%02x:%02x:%02x:%02x:%02x, channel %u\n",
+                    link.bssid[0], link.bssid[1], link.bssid[2],
+                    link.bssid[3], link.bssid[4], link.bssid[5],
+                    (unsigned)link.channel);
+    }
+    diag_printf("       %lu link losses, %lu roams",
+                (unsigned long)link.link_losses, (unsigned long)link.roams);
+    if (link.last_disconnect_us > 0) {
+        diag_printf("; last disconnect reason %u at rssi %d, %llds ago",
+                    (unsigned)link.last_disconnect_reason,
+                    (int)link.last_disconnect_rssi,
+                    (long long)((esp_timer_get_time() - link.last_disconnect_us) / 1000000));
+    }
+    diag_printf("\n");
     diag_printf("mqtt:  %s", mqtt_manager_is_connected() ? "connected" : "disconnected");
     if (mqtt_manager_topic_prefix()) {
         diag_printf(" under %s", mqtt_manager_topic_prefix());

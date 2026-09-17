@@ -22,6 +22,13 @@
     "heap_min": { "type": "integer", "minimum": 0, "description": "The low-water mark since boot. A steadily falling value is a leak; heap_free alone is too noisy to show one." },
     "ip": { "type": "string" },
     "rssi": { "type": "integer", "description": "dBm, 0 when not associated" },
+    "wifi_bssid": { "type": "string", "description": "The access point associated with, as aa:bb:cc:dd:ee:ff; empty when not associated. On an SSID served by several access points, a change here between reports is a roam or a reconnect to a different one." },
+    "wifi_channel": { "type": "integer", "minimum": 0, "maximum": 14, "description": "0 when not associated" },
+    "wifi_link_losses": { "type": "integer", "minimum": 0, "description": "Times an established link dropped since boot. Roams are not counted." },
+    "wifi_roams": { "type": "integer", "minimum": 0, "description": "BSS transitions since boot: moves to another access point on the same SSID, steered by the network." },
+    "wifi_disconnect_reason": { "type": "integer", "minimum": 0, "description": "ESP-IDF wifi_err_reason_t of the most recent disconnect, including failed connection attempts; 0 when there has been none. Common: 200 beacon timeout, 201 no AP found, 15 4-way handshake timeout, 8 this station left, 4 inactivity, 12 BSS transition." },
+    "wifi_disconnect_rssi": { "type": "integer", "description": "dBm at the most recent disconnect; 0 when there has been none" },
+    "wifi_disconnect_ago_s": { "type": "integer", "minimum": -1, "description": "Seconds since the most recent disconnect; -1 when there has been none" },
     "mqtt": { "type": "boolean" },
     "time_synced": { "type": "boolean" },
 

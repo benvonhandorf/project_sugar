@@ -66,6 +66,21 @@ int app_status_serialize(char *buf, size_t buf_size)
     int8_t rssi = 0;
     wifi_manager_get_rssi(&rssi);
 
+    /* Why the link last dropped and which access point it is on now. Opening the
+     * serial port resets this board, so the WiFi log is never there to read
+     * after the fact; these fields are the only record of a disconnect. */
+    wifi_manager_link_info_t link;
+    wifi_manager_get_link_info(&link);
+    char bssid[18] = "";
+    if (link.connected) {
+        snprintf(bssid, sizeof(bssid), "%02x:%02x:%02x:%02x:%02x:%02x",
+                 link.bssid[0], link.bssid[1], link.bssid[2],
+                 link.bssid[3], link.bssid[4], link.bssid[5]);
+    }
+    int64_t disconnect_ago_s = link.last_disconnect_us > 0
+        ? (esp_timer_get_time() - link.last_disconnect_us) / 1000000
+        : -1;
+
     weight_state_t w;
     weight_get_state(&w);
 
@@ -99,6 +114,13 @@ int app_status_serialize(char *buf, size_t buf_size)
         "\"heap_min\":%u,"
         "\"ip\":\"%s\","
         "\"rssi\":%d,"
+        "\"wifi_bssid\":\"%s\","
+        "\"wifi_channel\":%u,"
+        "\"wifi_link_losses\":%lu,"
+        "\"wifi_roams\":%lu,"
+        "\"wifi_disconnect_reason\":%u,"
+        "\"wifi_disconnect_rssi\":%d,"
+        "\"wifi_disconnect_ago_s\":%lld,"
         "\"mqtt\":%s,"
         "\"time_synced\":%s,"
         "\"loadcell\":\"%s\","
@@ -140,6 +162,13 @@ int app_status_serialize(char *buf, size_t buf_size)
         (unsigned)esp_get_minimum_free_heap_size(),
         ip,
         rssi,
+        bssid,
+        (unsigned)link.channel,
+        (unsigned long)link.link_losses,
+        (unsigned long)link.roams,
+        (unsigned)link.last_disconnect_reason,
+        (int)link.last_disconnect_rssi,
+        (long long)disconnect_ago_s,
         mqtt_manager_is_connected() ? "true" : "false",
         ntp_manager_is_synced() ? "true" : "false",
         part_state(board_loadcell_status()),

@@ -24,7 +24,7 @@
  */
 
 /* Big enough for every field above, with room for a longer firmware name. */
-#define APP_STATUS_BUF 1280
+#define APP_STATUS_BUF 1536
 
 /* Serialise the current status as JSON. Returns the length written, or -1 if it
  * would not fit. */
