@@ -28,7 +28,7 @@ if(DEFINED ESP_COMPONENTS_DIR)
 endif()
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(c3_nau7802_trigger)
+project(sensor_stick_trigger)
 
 #
 # Build the LittleFS image from fs/ and flash it with the firmware.

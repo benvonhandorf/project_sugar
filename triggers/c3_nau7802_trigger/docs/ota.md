@@ -20,7 +20,7 @@ the worst way for this to go wrong. `flash_a.py` erases `otadata` as part of fla
 ## Over the air
 
 ```sh
-./tools/ota_upload.py device.local build/c3_nau7802_trigger.bin -u admin
+./tools/ota_upload.py device.local build/sensor_stick_trigger.bin -u admin
 ```
 
 The image header and app descriptor are checked after roughly the first kilobyte, so the

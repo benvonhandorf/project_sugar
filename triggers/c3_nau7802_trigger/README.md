@@ -1,6 +1,6 @@
-# c3_nau7802_trigger
+# sensor_stick_trigger
 
-Firmware for a hummingbird feeder weight trigger: an ESP32-C3 with a NAU7802 load cell
+Firmware for a hummingbird feeder weight trigger: an ESP32-C3 or ESP32-S3 with a NAU7802 load cell
 front end, an SHT4x and an INA237, publishing weight, landing events and telemetry over
 MQTT.
 
@@ -30,7 +30,7 @@ has to do.
 
 ```sh
 cp config/config.example.json fs/config.json    # then edit it: feeder_id, WiFi, broker
-idf.py set-target esp32c3
+idf.py set-target esp32c3          # or esp32s3
 idf.py build
 ./tools/flash_a.py -p /dev/ttyACM0
 ```

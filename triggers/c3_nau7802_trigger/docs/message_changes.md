@@ -93,7 +93,7 @@ publishes absolute feeder mass.
 ```diff
   topic: sensors/feeders/3/status
 - online
-+ {"ts":…,"firmware":"c3_nau7802_trigger","feeder_id":3,"provisioned":true,
++ {"ts":…,"firmware":"sensor_stick_trigger","feeder_id":3,"provisioned":true,
 +  "uptime_s":8134,"reset_reason":"poweron","weight_g":974.318,…}
 
   topic: sensors/feeders/3/reset

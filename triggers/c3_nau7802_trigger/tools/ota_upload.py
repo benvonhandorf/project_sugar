@@ -2,7 +2,7 @@
 """
 Upload firmware to a running device over HTTP.
 
-    ./tools/ota_upload.py device.local build/c3_nau7802_trigger.bin -u admin
+    ./tools/ota_upload.py device.local build/sensor_stick_trigger.bin -u admin
 
 The device validates the image header before taking the whole upload, so a wrong
 binary is refused in about a kilobyte rather than after the transfer. It reboots
