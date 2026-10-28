@@ -5,7 +5,7 @@ changing code; it should save most of a codebase scan.
 
 ## What this is
 
-Firmware for a hummingbird feeder weight trigger: an ESP32-C3 with a NAU7802 load cell
+Firmware for a hummingbird feeder weight trigger: an ESP32-S3 (the default target; the ESP32-C3 is also supported) with a NAU7802 load cell
 front end, an SHT4x and an INA237, all three on one I2C bus. Built from `idf_template`.
 
 The parts that every project needs — configuration, WiFi, mDNS, NTP, MQTT, a command

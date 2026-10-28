@@ -37,12 +37,12 @@
   },
 
   "board": {
-    "i2c_sda": 5,
-    "i2c_scl": 6,
-    "nau7802_drdy": 7,
+    "i2c_sda": 36,
+    "i2c_scl": 35,
+    "nau7802_drdy": 37,
     "sht4x_address": 68,
-    "ina237_address": 64,
-    "vin_adc_gpio": -1,
+    "ina237_address": -1,
+    "vin_adc_gpio": 1,
     "vin_divider_top_ohms": 500000,
     "vin_divider_bottom_ohms": 100000
   },

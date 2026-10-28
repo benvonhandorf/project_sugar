@@ -261,5 +261,5 @@ direct_dependencies:
 - sht4x
 - wifi_manager
 manifest_hash: b9734af616898240dd4898500e8027d27cd5081f02ac5612761a7a67006283ac
-target: esp32c3
+target: esp32s3
 version: 3.0.0
