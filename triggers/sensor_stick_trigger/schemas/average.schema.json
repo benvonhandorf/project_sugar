@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/average.schema.json",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/sensor_stick_trigger/schemas/average.schema.json",
   "title": "Feeder baseline weight",
   "description": "Published on <prefix>/average at QoS 0. This is the slowly-adapting estimate of the unoccupied feeder weight -- syrup level, in other words -- not an average of recent samples.\n\nThe cadence is deliberately no promise. The iteration counter advances on every sample but the publish only happens on a settled one, so these are irregular and are skipped entirely while a bird is present. Do not infer a missing message means a missing device; look at status.\n\nBREAKING CHANGE from the predecessor: the payload was a bare formatted float ('-0.412'), not JSON. See docs/message_changes.md.",
   "type": "object",

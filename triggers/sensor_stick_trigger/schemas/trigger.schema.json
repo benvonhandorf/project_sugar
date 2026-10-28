@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/trigger.schema.json",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/sensor_stick_trigger/schemas/trigger.schema.json",
   "title": "Feeder landing event",
   "description": "Published on <prefix>/trigger at QoS 0, on assertion and on clear only -- not on every triggered sample. One message is also published at startup, with value false, so a consumer that connects and finds nothing retained still knows the device is not mid-event.\n\nBREAKING CHANGE from the predecessor: `value` is a JSON boolean. The predecessor emitted the integer 1 or 0 inside a JSON object, while its own documentation promised true/false and its only consumer string-compared the whole payload to 'true' -- three descriptions, no two of which agreed. See docs/message_changes.md.",
   "type": "object",

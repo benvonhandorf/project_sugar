@@ -46,12 +46,12 @@
       "properties": {
         "i2c_sda": {
           "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
-          "default": 5,
+          "default": 36,
           "description": "I2C data pin. Every part on this board is on it: the NAU7802 at 0x2A, the SHT4x, and the INA237. -1 disables the bus and with it all three."
         },
         "i2c_scl": {
           "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
-          "default": 6,
+          "default": 35,
           "description": "I2C clock pin"
         },
         "i2c_hz": {
@@ -61,7 +61,7 @@
         },
         "nau7802_drdy": {
           "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
-          "default": 7,
+          "default": 37,
           "description": "GPIO the NAU7802's DRDY output is wired to, or -1 to poll PU_CTRL.CR over I2C instead. Wire it if you can: polling runs on the FreeRTOS tick, so a result read can land exactly as the device rewrites its registers and stitch one reading out of two conversions. Near zero that is a huge outlier; anywhere else it passes for noise."
         },
         "sht4x_address": {
@@ -71,12 +71,12 @@
         },
         "ina237_address": {
           "type": "integer", "minimum": -1, "maximum": 79, "js2cType": "int8_t",
-          "default": 64,
+          "default": -1,
           "description": "0x40 to 0x4F as decimal, selected by the A0/A1 pins (Table 7-2), or -1 when no INA237 is fitted. -1 starts nothing and logs nothing: the part is simply not there, which status reports as 'not-fitted' rather than 'failed'."
         },
         "vin_adc_gpio": {
           "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
-          "default": -1,
+          "default": 1,
           "description": "GPIO an input-voltage divider is wired to, or -1 for none. Must be an ADC-capable pin. Used for bus_v when there is no INA237; with one fitted, the INA237 wins and this is ignored. Voltage only: a divider says nothing about current, so a board measuring this way reports none."
         },
         "vin_divider_top_ohms": {

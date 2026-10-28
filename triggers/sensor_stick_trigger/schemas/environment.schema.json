@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/environment.schema.json",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/sensor_stick_trigger/schemas/environment.schema.json",
   "title": "Feeder environment",
   "description": "Published on <prefix>/environment every telemetry.environment_interval_s, from the SHT4x. New in this firmware; the predecessor had no environmental sensor.",
   "type": "object",

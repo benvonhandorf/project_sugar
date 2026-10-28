@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/power.schema.json",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/sensor_stick_trigger/schemas/power.schema.json",
   "title": "Feeder trigger power draw",
   "description": "Published on <prefix>/power every telemetry.power_interval_s. New in this firmware; the predecessor had no power monitor. With an INA237 fitted the payload carries bus_v, current_a and power_w; on a board without one, bus_v is measured through a resistor divider into an ADC pin and current_a, power_w and temperature_c are absent -- a divider cannot measure them, and a 0 would read as a measurement.",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/status.schema.json",
+  "$id": "https://github.com/benvonhandorf/project_sugar/triggers/sensor_stick_trigger/schemas/status.schema.json",
   "title": "Feeder trigger status",
   "description": "Retained on <prefix>/status, republished every telemetry.status_interval_s. A flat object of scalars: that is the shape that survives being graphed, alerted on and diffed. It replaces two retained topics the predecessor published separately -- a bare 'online'/'offline' string on /status and a bare integer reset code on /reset. See docs/message_changes.md.",
   "type": "object",
