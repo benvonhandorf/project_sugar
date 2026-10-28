@@ -28,6 +28,7 @@ idf_component_register(
                  "scale_store.c"
                  "sensors.c"
                  "trigger.c"
+                 "vin.c"
                  "weight.c"
                  "${GEN_C}"
     INCLUDE_DIRS "." "${GEN_DIR}")

@@ -56,6 +56,12 @@ static const char *part_state(const board_part_status_t *p)
     return p->present ? "ok" : "failed";
 }
 
+/* The INA237 can be absent by design (ina237_address -1), which is not a failure. */
+static const char *ina_state(void)
+{
+    return board_config()->ina237_address < 0 ? "not-fitted" : part_state(board_power_status());
+}
+
 int app_status_serialize(char *buf, size_t buf_size)
 {
     const esp_app_desc_t *app = esp_app_get_description();
@@ -89,6 +95,15 @@ int app_status_serialize(char *buf, size_t buf_size)
 
     const environment_reading_t *env = sensors_last_environment();
     const power_reading_t *pwr = sensors_last_power();
+
+    /* Current and power come from the INA237 alone. Without one they are left
+     * out of the document rather than reported as 0 A, which a consumer would
+     * take as a measurement. */
+    char pwr_extra[64] = "";
+    if (pwr->has_current) {
+        snprintf(pwr_extra, sizeof(pwr_extra), "\"current_a\":%.5f,\"power_w\":%.5f,",
+                 pwr->valid ? pwr->current_a : 0.0, pwr->valid ? pwr->power_w : 0.0);
+    }
 
     /*
      * A flat object of scalars: the shape that survives being graphed, alerted
@@ -144,8 +159,7 @@ int app_status_serialize(char *buf, size_t buf_size)
         "\"temperature_c\":%.2f,"
         "\"humidity_pct\":%.2f,"
         "\"bus_v\":%.4f,"
-        "\"current_a\":%.5f,"
-        "\"power_w\":%.5f,"
+        "%s"
         "\"power_healthy\":%s,"
         "\"watchdog_armed\":%s,"
         "\"watchdog_remaining_ms\":%lld,"
@@ -173,7 +187,7 @@ int app_status_serialize(char *buf, size_t buf_size)
         ntp_manager_is_synced() ? "true" : "false",
         part_state(board_loadcell_status()),
         part_state(board_environment_status()),
-        part_state(board_power_status()),
+        ina_state(),
         w.sensor_ok ? "true" : "false",
         w.initialized ? "true" : "false",
         w.triggered ? "true" : "false",
@@ -189,8 +203,7 @@ int app_status_serialize(char *buf, size_t buf_size)
         env->valid ? env->temperature_c : 0.0,
         env->valid ? env->humidity_pct : 0.0,
         pwr->valid ? pwr->bus_v : 0.0,
-        pwr->valid ? pwr->current_a : 0.0,
-        pwr->valid ? pwr->power_w : 0.0,
+        pwr_extra,
         (pwr->valid && pwr->healthy) ? "true" : "false",
         c.armed ? "true" : "false",
         (long long)c.remaining_ms,

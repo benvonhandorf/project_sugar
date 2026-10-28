@@ -188,6 +188,15 @@ know why you want it.
 power, die temperature) are new — the old board had neither part. Nothing has to change
 to keep working; subscribe to them if you want them.
 
+**A board with no INA237 reports voltage only.** The ESP32-S3 board has no INA237, only a
+500k/100k divider from the input to GPIO 1. On such a board `power` carries
+`{"ts":…,"bus_v":…,"healthy":true}` and **no** `current_a`, `power_w` or `temperature_c`,
+and `status` omits `current_a` and `power_w` the same way — they are absent rather than
+0, because a zero would read as a measured zero. `status.ina237` is `"not-fitted"`, a
+fourth value beside `ok`, `failed` and `not-tried`. A consumer that requires `current_a`
+must be relaxed to treat it as optional; `schemas/power.schema.json` no longer requires
+it. A board with an INA237 publishes exactly what it did before.
+
 ---
 
 ## Migration order

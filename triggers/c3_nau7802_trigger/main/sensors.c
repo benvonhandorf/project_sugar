@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "publish_queue.h"
+#include "vin.h"
 
 static const char *TAG = "sensors";
 
@@ -81,11 +82,45 @@ esp_err_t sensors_read_environment(environment_reading_t *out)
     return ESP_OK;
 }
 
+/* The input voltage through a divider: no INA237, so no current and no power. */
+static esp_err_t read_power_vin(power_reading_t *out)
+{
+    double volts;
+    esp_err_t err = vin_read(&volts);
+    if (err != ESP_OK) {
+        s_power.failures++;
+        s_power.valid = false;
+        ESP_LOGW(TAG, "input voltage: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    s_power.reads++;
+    s_power.valid = true;
+    s_power.has_current = false;
+    s_power.bus_v = volts;
+    s_power.current_a = 0;
+    s_power.power_w = 0;
+    s_power.temp_c = 0;
+    s_power.healthy = true;
+
+    if (out) {
+        *out = s_power;
+    }
+
+    char payload[96];
+    int n = snprintf(payload, sizeof(payload), "{\"ts\":%lld,\"bus_v\":%.4f,\"healthy\":true}",
+                     (long long)app_time_epoch_ms(), s_power.bus_v);
+    if (n > 0 && (size_t)n < sizeof(payload)) {
+        publish_queue_send(TOPIC_POWER, payload, (size_t)n, 0, false);
+    }
+    return ESP_OK;
+}
+
 esp_err_t sensors_read_power(power_reading_t *out)
 {
     ina237_handle_t ina = board_power();
     if (!ina || !board_power_status()->present) {
-        return ESP_ERR_INVALID_STATE;
+        return vin_available() ? read_power_vin(out) : ESP_ERR_INVALID_STATE;
     }
 
     ina237_reading_t r;
@@ -99,6 +134,7 @@ esp_err_t sensors_read_power(power_reading_t *out)
 
     s_power.reads++;
     s_power.valid = true;
+    s_power.has_current = true;
     s_power.bus_v = r.bus_v;
     s_power.current_a = r.current_a;
     s_power.power_w = r.power_w;

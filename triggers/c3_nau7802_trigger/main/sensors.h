@@ -7,7 +7,8 @@
 
 /*
  * The two sensors that are not the load cell: an SHT4x for the air the feeder
- * hangs in, and an INA237 for what the device is drawing.
+ * hangs in, and the supply: an INA237 for voltage, current and power where one is
+ * fitted, otherwise the input voltage alone through a divider into an ADC pin.
  *
  * They are polled by their own small task, not on the sampling loop and not on
  * an esp_timer callback. Not the sampling loop because anything there costs a
@@ -29,10 +30,14 @@ typedef struct {
 typedef struct {
     bool valid;
     double bus_v;
+    /* Only meaningful when has_current. A divider measures voltage and nothing
+     * else, so without an INA237 these are not zero -- they do not exist, and
+     * neither the power topic nor the status message mentions them. */
+    bool has_current;
     double current_a;
     double power_w;
     double temp_c;
-    bool healthy; /* trim memory good and no math overflow */
+    bool healthy; /* INA237: trim memory good and no math overflow. Divider: the read worked. */
     uint32_t reads;
     uint32_t failures;
 } power_reading_t;

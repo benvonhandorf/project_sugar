@@ -70,9 +70,22 @@
           "description": "0x44, 0x45 or 0x46 as decimal. The variant fitted decides it; there are no address pins, so the address is a fact about which part was fitted rather than how it was strapped. Note the overlap with the INA237's range: 0x44-0x46 are legal for both parts, and two devices answering one address is a fault the firmware refuses to start on rather than diagnose later."
         },
         "ina237_address": {
-          "type": "integer", "minimum": 64, "maximum": 79, "js2cType": "uint8_t",
+          "type": "integer", "minimum": -1, "maximum": 79, "js2cType": "int8_t",
           "default": 64,
-          "description": "0x40 to 0x4F as decimal, selected by the A0/A1 pins (Table 7-2)."
+          "description": "0x40 to 0x4F as decimal, selected by the A0/A1 pins (Table 7-2), or -1 when no INA237 is fitted. -1 starts nothing and logs nothing: the part is simply not there, which status reports as 'not-fitted' rather than 'failed'."
+        },
+        "vin_adc_gpio": {
+          "type": "integer", "minimum": -1, "maximum": 48, "js2cType": "int8_t",
+          "default": -1,
+          "description": "GPIO an input-voltage divider is wired to, or -1 for none. Must be an ADC-capable pin. Used for bus_v when there is no INA237; with one fitted, the INA237 wins and this is ignored. Voltage only: a divider says nothing about current, so a board measuring this way reports none."
+        },
+        "vin_divider_top_ohms": {
+          "type": "number", "default": 500000,
+          "description": "The divider resistor between the input voltage and vin_adc_gpio."
+        },
+        "vin_divider_bottom_ohms": {
+          "type": "number", "default": 100000,
+          "description": "The divider resistor between vin_adc_gpio and ground. The input voltage is the pin voltage times (top + bottom) / bottom. A divider this high-impedance wants a capacitor of 100 nF or more at the pin, or the ADC's sampling charge pulls the reading low."
         }
       }
     },
@@ -217,7 +230,7 @@
         "power_interval_s": {
           "type": "integer", "minimum": 0, "maximum": 86400, "js2cType": "uint32_t",
           "default": 60,
-          "description": "How often to read and publish the INA237. 0 disables it."
+          "description": "How often to read and publish the input voltage (and, with an INA237, current and power). 0 disables it."
         },
         "status_interval_s": {
           "type": "integer", "minimum": 5, "maximum": 86400, "js2cType": "uint32_t",

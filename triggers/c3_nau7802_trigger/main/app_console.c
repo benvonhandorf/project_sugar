@@ -414,12 +414,18 @@ static int cmd_sensor_power(int argc, char **argv)
     esp_err_t err = sensors_read_power(&r);
     if (err == ESP_ERR_INVALID_STATE) {
         const board_part_status_t *p = board_power_status();
-        diag_error("INA237 is not available: %s", p->stage ? p->stage : "not started");
+        diag_error("no INA237 and no input-voltage pin: %s", p->stage ? p->stage : "not started");
         return -1;
     }
     if (err != ESP_OK) {
-        diag_error("INA237: %s", esp_err_to_name(err));
+        diag_error("power: %s", esp_err_to_name(err));
         return -1;
+    }
+
+    if (!r.has_current) {
+        diag_printf("%.4f V (input divider; no current measurement), %lu reads, %lu failures\n",
+                    r.bus_v, (unsigned long)r.reads, (unsigned long)r.failures);
+        return 0;
     }
 
     const ina237_config_report_t *cr = board_power_report();
@@ -433,7 +439,7 @@ static int cmd_sensor_power(int argc, char **argv)
 
 static const cli_command_t sensor_commands[] = {
     {"env",   NULL, "Read and publish the SHT4x now",  cmd_sensor_env},
-    {"power", NULL, "Read and publish the INA237 now", cmd_sensor_power},
+    {"power", NULL, "Read and publish the input voltage (and INA237 current) now", cmd_sensor_power},
 };
 
 static const cli_group_t sensor_group = {
@@ -469,9 +475,14 @@ static int cmd_i2c_scan(int argc, char **argv)
 
     diag_printf("bus:      sda %d, scl %d, %lu Hz\n", b->i2c_sda, b->i2c_scl,
                 (unsigned long)b->i2c_hz);
-    diag_printf("expected: 0x%02x NAU7802, 0x%02x SHT4x, 0x%02x INA237\n",
-                (unsigned)NAU7802_I2C_ADDRESS, (unsigned)b->sht4x_address,
-                (unsigned)b->ina237_address);
+    if (b->ina237_address >= 0) {
+        diag_printf("expected: 0x%02x NAU7802, 0x%02x SHT4x, 0x%02x INA237\n",
+                    (unsigned)NAU7802_I2C_ADDRESS, (unsigned)b->sht4x_address,
+                    (unsigned)b->ina237_address);
+    } else {
+        diag_printf("expected: 0x%02x NAU7802, 0x%02x SHT4x (no INA237 fitted)\n",
+                    (unsigned)NAU7802_I2C_ADDRESS, (unsigned)b->sht4x_address);
+    }
 
     uint8_t addrs[16];
     size_t found = 0;

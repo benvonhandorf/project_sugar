@@ -34,7 +34,11 @@
 
     "loadcell": { "$ref": "#/definitions/part_state" },
     "sht4x": { "$ref": "#/definitions/part_state" },
-    "ina237": { "$ref": "#/definitions/part_state" },
+    "ina237": {
+      "type": "string",
+      "enum": ["ok", "failed", "not-tried", "not-fitted"],
+      "description": "As the other parts, plus 'not-fitted': board.ina237_address is -1 because this board has no INA237, which is a fact about the board rather than a fault."
+    },
 
     "sensor_ok": { "type": "boolean", "description": "The most recent conversion attempt succeeded" },
     "initialized": { "type": "boolean", "description": "The startup baseline has been acquired. No trigger can be asserted before this." },
@@ -54,10 +58,10 @@
 
     "temperature_c": { "type": "number", "description": "Last SHT4x reading; 0 when sht4x is not 'ok'" },
     "humidity_pct": { "type": "number", "minimum": 0, "maximum": 100 },
-    "bus_v": { "type": "number" },
-    "current_a": { "type": "number" },
-    "power_w": { "type": "number" },
-    "power_healthy": { "type": "boolean", "description": "The INA237's trim memory checksum is good and no arithmetic overflow occurred. It deliberately says nothing about whether the part has been reset: the driver writes only SHUNT_CAL, and the value it writes is that register's own reset value, so a reset part comes back configured exactly as this firmware configured it." },
+    "bus_v": { "type": "number", "description": "Supply voltage, from the INA237 or, on a board without one, from a divider into an ADC pin; 0 until the first reading" },
+    "current_a": { "type": "number", "description": "Present only when an INA237 is fitted" },
+    "power_w": { "type": "number", "description": "Present only when an INA237 is fitted" },
+    "power_healthy": { "type": "boolean", "description": "Without an INA237: the last voltage read succeeded. With one: the INA237's trim memory checksum is good and no arithmetic overflow occurred. It deliberately says nothing about whether the part has been reset: the driver writes only SHUNT_CAL, and the value it writes is that register's own reset value, so a reset part comes back configured exactly as this firmware configured it." },
 
     "watchdog_armed": { "type": "boolean" },
     "watchdog_remaining_ms": { "type": "integer", "description": "-1 when disarmed or disabled" },

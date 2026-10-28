@@ -2,19 +2,19 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/benvonhandorf/project_sugar/triggers/c3_nau7802_trigger/schemas/power.schema.json",
   "title": "Feeder trigger power draw",
-  "description": "Published on <prefix>/power every telemetry.power_interval_s, from the INA237. New in this firmware; the predecessor had no power monitor.",
+  "description": "Published on <prefix>/power every telemetry.power_interval_s. New in this firmware; the predecessor had no power monitor. With an INA237 fitted the payload carries bus_v, current_a and power_w; on a board without one, bus_v is measured through a resistor divider into an ADC pin and current_a, power_w and temperature_c are absent -- a divider cannot measure them, and a 0 would read as a measurement.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["bus_v", "current_a", "power_w", "healthy"],
+  "required": ["bus_v", "healthy"],
   "properties": {
     "ts": { "type": "integer", "description": "Epoch milliseconds, or 0 when the clock has not been set" },
     "bus_v": { "type": "number", "minimum": 0, "maximum": 85 },
-    "current_a": { "type": "number", "description": "Signed: negative is current flowing the other way through the shunt" },
-    "power_w": { "type": "number", "minimum": 0 },
-    "temperature_c": { "type": "number", "description": "The INA237 die, not the air. Compare with the SHT4x reading on /environment: a large gap is self-heating." },
+    "current_a": { "type": "number", "description": "Signed: negative is current flowing the other way through the shunt. Present only when an INA237 is fitted." },
+    "power_w": { "type": "number", "minimum": 0, "description": "Present only when an INA237 is fitted." },
+    "temperature_c": { "type": "number", "description": "Present only when an INA237 is fitted. The INA237 die, not the air. Compare with the SHT4x reading on /environment: a large gap is self-heating." },
     "healthy": {
       "type": "boolean",
-      "description": "False if the trim memory checksum failed (nothing the part reports is trustworthy) or an arithmetic overflow occurred (current and power are invalid, though bus_v is still good). It says nothing about whether the part has been reset, and cannot: the driver leaves CONFIG and ADC_CONFIG at their reset values and writes only SHUNT_CAL, whose reset value is the very constant it writes -- so a part that browns out comes back configured identically."
+      "description": "Without an INA237 this is always true: the read worked. With one: false if the trim memory checksum failed (nothing the part reports is trustworthy) or an arithmetic overflow occurred (current and power are invalid, though bus_v is still good). It says nothing about whether the part has been reset, and cannot: the driver leaves CONFIG and ADC_CONFIG at their reset values and writes only SHUNT_CAL, whose reset value is the very constant it writes -- so a part that browns out comes back configured identically."
     }
   }
 }

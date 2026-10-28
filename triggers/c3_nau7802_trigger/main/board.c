@@ -4,6 +4,7 @@
 
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+#include "vin.h"
 
 static const char *TAG = "board";
 
@@ -103,8 +104,12 @@ esp_err_t board_init(const app_config_board_t *cfg)
      * bus is contended and both parts return nonsense -- but it is a very quiet
      * one, because each driver's own probe still sees something answering. Say
      * so here, once, in terms of the two configuration values that collide.
+     *
+     * An ina237_address of -1 means the part is not fitted, and cannot collide.
      */
-    if (cfg->sht4x_address == cfg->ina237_address) {
+    const bool ina_fitted = cfg->ina237_address >= 0;
+    const bool address_clash = ina_fitted && cfg->sht4x_address == cfg->ina237_address;
+    if (address_clash) {
         ESP_LOGE(TAG, "sht4x_address and ina237_address are both 0x%02x. "
                       "Two parts cannot share an address; readings from both "
                       "would be nonsense. Neither is started.",
@@ -140,9 +145,11 @@ esp_err_t board_init(const app_config_board_t *cfg)
         /* Both of the clashing parts are left without a device handle, rather
          * than arbitrarily starting the first one: which of the two is
          * misconfigured is not something the firmware can know. */
-        if (cfg->sht4x_address != cfg->ina237_address) {
+        if (!address_clash) {
             add_device(cfg->sht4x_address, cfg->i2c_hz, "SHT4x", &s_sht_dev);
-            add_device(cfg->ina237_address, cfg->i2c_hz, "INA237", &s_ina_dev);
+            if (ina_fitted) {
+                add_device((uint8_t)cfg->ina237_address, cfg->i2c_hz, "INA237", &s_ina_dev);
+            }
         }
     }
 
@@ -172,6 +179,12 @@ esp_err_t board_init(const app_config_board_t *cfg)
     err = ina237_create(&ina_cfg, &s_ina);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "creating the INA237 handle: %s", esp_err_to_name(err));
+    }
+
+    /* The input-voltage divider is not on the I2C bus, so it is brought up
+     * whether or not there is one. A board with an INA237 has no use for it. */
+    if (!ina_fitted) {
+        vin_init(cfg);
     }
 
     return ESP_OK;
@@ -295,6 +308,13 @@ esp_err_t board_start_power(const app_config_power_t *cfg)
     s_ina_status.attempted = true;
     s_ina_status.present = false;
     s_ina_status.stage = NULL;
+
+    /* Not fitted is a fact about the board, not a fault: no error, no log. */
+    if (s_cfg.ina237_address < 0) {
+        s_ina_status.err = ESP_ERR_NOT_FOUND;
+        s_ina_status.stage = "not fitted";
+        return s_ina_status.err;
+    }
 
     if (!s_ina || !s_ina_dev) {
         s_ina_status.err = ESP_ERR_INVALID_STATE;

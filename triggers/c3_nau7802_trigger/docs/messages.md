@@ -16,7 +16,7 @@ Machine-readable schemas for every published payload live in [`../schemas/`](../
 | `raw_batch` | pub | 0 | no | A batch of weight samples | [batch](../schemas/batch.schema.json) |
 | `rssi_batch` | pub | 0 | no | A batch of link RSSI readings | [batch](../schemas/batch.schema.json) |
 | `environment` | pub | 0 | no | SHT4x temperature and humidity | [environment](../schemas/environment.schema.json) |
-| `power` | pub | 0 | no | INA237 bus voltage, current, power | [power](../schemas/power.schema.json) |
+| `power` | pub | 0 | no | Supply voltage; with an INA237 also current and power | [power](../schemas/power.schema.json) |
 | `message` | pub | 0 | no | Free text: re-baselines, sensor faults | — |
 | `log` | pub | 0 | no | The device log, line by line | — |
 | `control` | **sub** | 1 | — | `reset` or `rebaseline` | — |
