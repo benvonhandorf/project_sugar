@@ -560,6 +560,24 @@ static void sample_task(void *arg)
 {
     (void)arg;
 
+    /*
+     * No NAU7802 on the bus at all -- the probe got no answer -- means the
+     * daughterboard is not fitted, which is a configuration and not a fault the
+     * watchdog below can cure: restarting only reproduces it, and the device
+     * never stays up long enough to be reached. Report it once and stand down.
+     * A part that answers the probe but fails later still takes the restart.
+     */
+    const board_part_status_t *nau = board_loadcell_status();
+    if (nau && nau->attempted && !nau->present &&
+        board_loadcell_report()->failed_stage == NAU7802_STAGE_PROBE) {
+        xSemaphoreTake(s_state_lock, portMAX_DELAY);
+        s_state.sensor_ok = false;
+        xSemaphoreGive(s_state_lock);
+        publish_message("load cell not detected; sampling disabled");
+        ESP_LOGW(TAG, "NAU7802 not detected; sample task and load cell watchdog disabled");
+        vTaskDelete(NULL);
+    }
+
     if (s_cfg.watchdog.hardware_s > 0) {
         /* Subscribing rather than assuming: the task watchdog exists to catch a
          * sampling loop that has stopped, and nothing else in this firmware
